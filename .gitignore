@@ -1,0 +1,5 @@
+﻿# Material de clase
+*.pdf
+
+# Configuración local de Claude Code
+.claude/settings.local.json

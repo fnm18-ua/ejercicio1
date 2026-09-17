@@ -3,3 +3,10 @@
 
 # Configuración local de Claude Code
 .claude/settings.local.json
+
+# Base de datos local (principio IV: no versionar datos introducidos)
+datos/
+
+# Archivos generados por Python
+__pycache__/
+*.pyc

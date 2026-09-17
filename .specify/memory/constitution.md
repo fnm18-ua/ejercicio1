@@ -1,17 +1,19 @@
 <!--
 Informe de impacto de sincronización (Sync Impact Report)
-- Cambio de versión: plantilla sin versionar → 1.0.0 (ratificación inicial)
-- Principios definidos (sustituyen a los marcadores de la plantilla):
-  - [PRINCIPLE_1_NAME] → I. Idioma español y vocabulario del dominio
-  - [PRINCIPLE_2_NAME] → II. Simplicidad
-  - [PRINCIPLE_3_NAME] → III. Trazabilidad
-  - [PRINCIPLE_4_NAME] → IV. Datos ficticios
-  - [PRINCIPLE_5_NAME] → V. Sin secretos en el repositorio
-  - (nuevo) → VI. Ejecución local
-  - (nuevo) → VII. Verificación automática de la lógica crítica
-- Secciones añadidas: principios VI y VII (el usuario fijó exactamente siete principios).
-- Secciones eliminadas: [SECTION_2_NAME] y [SECTION_3_NAME] de la plantilla. Se omiten
-  deliberadamente porque el usuario pidió no añadir principios ni reglas adicionales.
+- Cambio de versión: 1.0.0 → 2.0.0 (MAYOR: se redefine un principio y se eliminan dos)
+- Principios modificados:
+  - I. Idioma español y vocabulario del dominio → I. Idioma (mismo contenido, título abreviado)
+  - II. Simplicidad → II. Alcance mínimo (redefinido: el módulo se limita a tres capacidades
+    y ante varias soluciones se elige la más simple)
+  - III. Trazabilidad → III. Trazabilidad (sin cambios)
+  - IV. Datos ficticios → IV. Datos ficticios (sin cambios)
+  - VI. Ejecución local → V. Ejecución local (renumerado, sin cambios de contenido)
+- Principios eliminados (el usuario fijó exactamente cinco principios):
+  - V. Sin secretos en el repositorio
+  - VII. Verificación automática de la lógica crítica
+- Secciones añadidas: ninguna.
+- Secciones eliminadas: ninguna respecto a 1.0.0 ([SECTION_2_NAME] y [SECTION_3_NAME] de la
+  plantilla siguen omitidas deliberadamente para no añadir reglas no pedidas).
 - Plantillas dependientes: no se modifican (leen la constitución en tiempo de ejecución).
 - TODO diferidos: ninguno.
 -->
@@ -20,7 +22,7 @@ Informe de impacto de sincronización (Sync Impact Report)
 
 ## Core Principles
 
-### I. Idioma español y vocabulario del dominio
+### I. Idioma
 
 - La interfaz de usuario, los mensajes de error y toda la documentación DEBEN estar en español.
 - El código DEBE estar en español: entidades, variables, funciones y campos. Los
@@ -34,13 +36,18 @@ Informe de impacto de sincronización (Sync Impact Report)
 **Justificación**: un único idioma y un vocabulario estable eliminan ambigüedad entre
 requisitos e implementación y facilitan la trazabilidad.
 
-### II. Simplicidad
+### II. Alcance mínimo
 
-- NO se DEBEN añadir dependencias, capas ni abstracciones que la especificación no exija.
-- Toda dependencia, capa o abstracción presente DEBE poder justificarse con un requisito
-  de la especificación.
+- El módulo DEBE cubrir exactamente tres capacidades:
+  1. registro e identificación del paciente;
+  2. búsqueda y verificación de identidad;
+  3. modificación de datos.
+- NO se DEBE añadir ninguna funcionalidad, caso de uso ni variante fuera de esas tres
+  capacidades, por razonable que parezca.
+- Ante varias formas de resolver algo, se DEBE elegir siempre la más simple.
 
-**Justificación**: la complejidad no requerida dificulta la verificación y la trazabilidad.
+**Justificación**: un alcance cerrado y la opción más simple evitan complejidad no requerida,
+que dificulta la verificación y la trazabilidad.
 
 ### III. Trazabilidad
 
@@ -56,35 +63,18 @@ requisito identificable.
 ### IV. Datos ficticios
 
 - El repositorio es público y el dominio es sanitario: todos los datos que aparezcan
-  (ejemplos, datos de prueba, tests, capturas y documentación) DEBEN ser inventados.
+  (ejemplos, datos de prueba y documentación) DEBEN ser inventados.
 - NUNCA se DEBEN usar datos reales de personas.
 
 **Justificación**: los datos de salud son categoría especial de datos personales; su exposición
 en un repositorio público es inaceptable.
 
-### V. Sin secretos en el repositorio
-
-- Ninguna credencial ni configuración sensible DEBE versionarse.
-
-**Justificación**: todo lo versionado en un repositorio público debe considerarse expuesto.
-
-### VI. Ejecución local
+### V. Ejecución local
 
 - La aplicación DEBE poder arrancarse en local con un único comando.
 - La ejecución NO DEBE requerir servicios de pago ni cuentas en plataformas externas.
 
 **Justificación**: cualquier persona evaluadora debe poder ejecutar la práctica sin barreras.
-
-### VII. Verificación automática de la lógica crítica
-
-- DEBEN existir tests automáticos que cubran:
-  - la generación del identificador único de paciente;
-  - la validación del documento de identidad;
-  - la detección de duplicados.
-- El resto de la funcionalidad se verifica manualmente.
-
-**Justificación**: estas tres piezas determinan la identificación inequívoca del paciente; un
-error en ellas compromete la integridad de la historia clínica.
 
 ## Governance
 
@@ -101,4 +91,4 @@ error en ellas compromete la integridad de la historia clínica.
   DEBE verificar el cumplimiento de cada principio; cualquier incumplimiento DEBE señalarse y
   resolverse antes de continuar.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-15 | **Last Amended**: 2026-09-15
+**Version**: 2.0.0 | **Ratified**: 2026-09-15 | **Last Amended**: 2026-09-17

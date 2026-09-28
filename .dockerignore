@@ -1,0 +1,30 @@
+# Base de datos local: nunca debe entrar en la imagen (principio IV: datos ficticios,
+# y la persistencia real va en un volumen, no en la imagen).
+datos/
+
+# Material de clase y documentacion: no se necesitan en tiempo de ejecucion.
+*.pdf
+specs/
+README.md
+
+# Herramientas de desarrollo y metadatos.
+.git/
+.gitignore
+.dockerignore
+.claude/
+.specify/
+
+# Pruebas: no forman parte de la imagen de ejecucion.
+tests/
+
+# Artefactos de Python.
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Ficheros de contenedores (no se copian dentro de la imagen).
+Dockerfile
+docker-compose.yml

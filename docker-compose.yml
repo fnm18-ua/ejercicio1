@@ -1,0 +1,30 @@
+# Levanta el modulo completo con un unico comando: docker compose up
+#
+# Un solo servicio: la aplicacion usa SQLite embebido, por lo que no hay ningun servicio de
+# base de datos ni dependencia externa (principio V: sin servicios de pago ni cuentas externas).
+
+services:
+  registro-pacientes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: registro-pacientes
+    container_name: registro-pacientes
+    # Configuracion por variables de entorno, todas con valor por defecto: `docker compose up`
+    # funciona sin definir ninguna.
+    environment:
+      # 0.0.0.0 es obligatorio dentro del contenedor para que el puerto publicado sea accesible.
+      HOST: 0.0.0.0
+      PUERTO: ${PUERTO:-8000}
+      # Debe quedar dentro de /datos para que el fichero se persista en el volumen.
+      RUTA_BD: ${RUTA_BD:-/datos/pacientes.db}
+    ports:
+      - "${PUERTO:-8000}:${PUERTO:-8000}"
+    # El fichero SQLite vive en el volumen: sobrevive a `docker compose down` y a reinicios.
+    volumes:
+      - datos_pacientes:/datos
+    init: true
+    restart: unless-stopped
+
+volumes:
+  datos_pacientes:

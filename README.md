@@ -15,11 +15,90 @@ Development. Cubre exactamente tres capacidades:
 El código de historia clínica es la identidad que el resto de módulos del HIS (citas, historia
 clínica, prescripción, facturación) usarían para referirse al paciente.
 
-## Requisitos
+## Módulo de programación de citas
+
+Segundo módulo del proyecto. Cubre otras tres capacidades, sobre la identidad que produce el
+módulo de registro:
+
+4. **Reservar una cita**: el paciente se identifica, busca especialista por especialidad y centro,
+   ve los huecos libres de una fecha y reserva uno.
+5. **Cancelar o reprogramar**: consulta sus citas con su estado y las cancela o las traslada a otro
+   hueco del mismo especialista, conservando la misma cita.
+6. **Gestionar la agenda de un especialista**: el personal administrativo bloquea franjas y ajusta
+   la duración de las consultas; las citas futuras que dejan de ser atendibles quedan canceladas
+   por el centro, con su motivo visible para el paciente.
+
+Hay **dos flujos separados**, sin inicio de sesión:
+
+| Flujo | Dirección |
+|---|---|
+| Paciente | `http://127.0.0.1:8000/citas` |
+| Personal administrativo | `http://127.0.0.1:8000/agenda` |
+
+> La página de inicio `/` todavía **no enlaza** con esos dos flujos: hay que escribir la dirección.
+> Añadir los enlaces implicaría modificar el módulo de registro y ninguna especificación lo pide;
+> queda como decisión pendiente (decisión D-C14 del plan del módulo).
+
+Los centros, las especialidades y los especialistas son **datos precargados**: la aplicación no
+ofrece ninguna forma de crearlos, editarlos ni eliminarlos.
+
+### Seguridad: no introduzcas datos reales
+
+No hay inicio de sesión ni control de acceso. Conocer el código de historia clínica de un paciente
+basta para ver y operar con sus citas, y `/agenda` está abierta a cualquiera. Es una limitación
+asumida del alcance académico, no un descuido.
+
+Una cita con un especialista revela una sospecha diagnóstica, por lo que estos datos son datos
+relativos a la salud, categoría especial del artículo 9 del RGPD. **La aplicación no es apta para
+datos reales de pacientes.**
+
+## Arrancar la aplicación con Docker (forma recomendada)
+
+Solo hace falta Docker con Docker Compose v2. No se instala nada más:
+
+```bash
+docker compose up
+```
+
+El primer arranque construye la imagen; no hay ningún paso manual adicional. Abrir
+`http://127.0.0.1:8000` en el navegador. Para detener el servidor, `Ctrl+C`.
+
+```bash
+docker compose up -d      # arrancar en segundo plano
+docker compose logs -f    # ver los mensajes del servidor
+docker compose down       # detener y eliminar el contenedor (los datos se conservan)
+docker compose down -v    # detener y borrar además el volumen: se pierden los datos
+```
+
+La aplicación se ejecuta en un único contenedor: usa SQLite embebido, por lo que no hay
+servicio de base de datos ni ninguna dependencia externa.
+
+### Persistencia
+
+El fichero SQLite vive en el volumen `datos_pacientes`, montado en `/datos` dentro del
+contenedor. Los pacientes registrados **sobreviven a `docker compose down` y a los reinicios**;
+solo se borran con `docker compose down -v`.
+
+### Configuración
+
+Todas las variables tienen valor por defecto, así que `docker compose up` funciona sin definir
+ninguna:
+
+| Variable | Por defecto (contenedor) | Descripción |
+|---|---|---|
+| `PUERTO` | `8000` | Puerto de escucha, publicado con el mismo número en el anfitrión |
+| `RUTA_BD` | `/datos/pacientes.db` | Ruta del fichero SQLite; debe quedar bajo `/datos` para persistir |
+| `HOST` | `0.0.0.0` | Interfaz de escucha; dentro del contenedor debe ser `0.0.0.0` |
+
+Para usar otro puerto:
+
+```bash
+PUERTO=9100 docker compose up
+```
+
+## Arrancar la aplicación sin Docker
 
 - Python 3.10 o superior. No hay que instalar ningún paquete adicional.
-
-## Arrancar la aplicación
 
 ```bash
 python app.py
@@ -27,6 +106,9 @@ python app.py
 
 Abrir `http://127.0.0.1:8000` en el navegador. Los datos se guardan en `datos/pacientes.db`,
 que se crea automáticamente y no se sube al repositorio. Para detener el servidor, `Ctrl+C`.
+
+Las mismas variables de entorno son válidas aquí, con valores por defecto adaptados a la
+ejecución local: `RUTA_BD` apunta a `datos/pacientes.db` y `HOST` a `127.0.0.1`.
 
 ## Ejecutar las pruebas
 

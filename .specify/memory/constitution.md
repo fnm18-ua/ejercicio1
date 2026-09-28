@@ -1,24 +1,29 @@
 <!--
 Informe de impacto de sincronización (Sync Impact Report)
-- Cambio de versión: 1.0.0 → 2.0.0 (MAYOR: se redefine un principio y se eliminan dos)
+- Cambio de versión: 3.1.0 → 3.2.0 (MENOR: se amplía el vocabulario del principio I)
 - Principios modificados:
-  - I. Idioma español y vocabulario del dominio → I. Idioma (mismo contenido, título abreviado)
-  - II. Simplicidad → II. Alcance mínimo (redefinido: el módulo se limita a tres capacidades
-    y ante varias soluciones se elige la más simple)
-  - III. Trazabilidad → III. Trazabilidad (sin cambios)
-  - IV. Datos ficticios → IV. Datos ficticios (sin cambios)
-  - VI. Ejecución local → V. Ejecución local (renumerado, sin cambios de contenido)
-- Principios eliminados (el usuario fijó exactamente cinco principios):
-  - V. Sin secretos en el repositorio
-  - VII. Verificación automática de la lógica crítica
+  - I. Idioma (ampliado: el vocabulario obligatorio del dominio pasa de 4 a 11 términos. Se
+    añaden los 7 del módulo de programación de citas — cita, especialista, especialidad, centro,
+    agenda, hueco y franja bloqueada — y la lista se agrupa por módulo. Los 4 términos previos
+    y las dos primeras reglas del principio, sobre idioma e identificadores, no cambian)
+  - II. Alcance mínimo (sin cambios)
+  - III. Trazabilidad (sin cambios)
+  - IV. Datos ficticios (sin cambios)
+  - V. Ejecución local en contenedores (sin cambios)
+- Principios eliminados: ninguno.
 - Secciones añadidas: ninguna.
-- Secciones eliminadas: ninguna respecto a 1.0.0 ([SECTION_2_NAME] y [SECTION_3_NAME] de la
-  plantilla siguen omitidas deliberadamente para no añadir reglas no pedidas).
+- Secciones eliminadas: ninguna ([SECTION_2_NAME] y [SECTION_3_NAME] de la plantilla siguen
+  omitidas deliberadamente para no añadir reglas no pedidas).
+- Justificación del salto MENOR y no MAYOR: solo se añaden términos. Los cuatro anteriores se
+  conservan con el mismo significado, por lo que nada que cumpliera 3.1.0 deja de cumplir esta
+  versión.
+- Resuelto: queda cerrado el pendiente que el informe de la versión 3.1.0 dejaba señalado (el
+  vocabulario no cubría el dominio de citas).
 - Plantillas dependientes: no se modifican (leen la constitución en tiempo de ejecución).
 - TODO diferidos: ninguno.
 -->
 
-# Constitución del módulo de Registro e Identificación de Pacientes (HIS)
+# Constitución del proyecto HIS (registro de pacientes y programación de citas)
 
 ## Core Principles
 
@@ -29,25 +34,38 @@ Informe de impacto de sincronización (Sync Impact Report)
   identificadores NO DEBEN contener tildes ni eñes (p. ej., `numero_historia`, no
   `número_historia`; `anio`, no `año`).
 - El vocabulario del dominio DEBE ser consistente en todo el proyecto (especificación, plan,
-  tareas, código, interfaz y documentación), usando siempre los términos: **paciente**,
-  **historia clínica**, **mutua** y **documento de identidad**. No se admiten sinónimos
-  alternativos para estos conceptos.
+  tareas, código, interfaz y documentación). No se admiten sinónimos alternativos para estos
+  conceptos:
+  - Comunes y del módulo de registro e identificación de pacientes: **paciente**,
+    **historia clínica**, **mutua** y **documento de identidad**.
+  - Del módulo de programación de citas: **cita**, **especialista**, **especialidad**,
+    **centro**, **agenda**, **hueco** y **franja bloqueada**.
 
 **Justificación**: un único idioma y un vocabulario estable eliminan ambigüedad entre
-requisitos e implementación y facilitan la trazabilidad.
+requisitos e implementación y facilitan la trazabilidad. Cada módulo del principio II aporta sus
+propios términos, y fijarlos evita que un mismo concepto aparezca con dos nombres distintos
+(p. ej. «médico» o «doctor» en lugar de **especialista**, o «slot» en lugar de **hueco**).
 
 ### II. Alcance mínimo
 
-- El módulo DEBE cubrir exactamente tres capacidades:
+- El proyecto DEBE cubrir exactamente dos módulos y, en total, exactamente seis capacidades.
+- **Módulo de registro e identificación de pacientes** — tres capacidades:
   1. registro e identificación del paciente;
   2. búsqueda y verificación de identidad;
   3. modificación de datos.
-- NO se DEBE añadir ninguna funcionalidad, caso de uso ni variante fuera de esas tres
+- **Módulo de programación de citas** — tres capacidades:
+  4. reservar una cita;
+  5. cancelar o reprogramar una cita;
+  6. gestionar la agenda de un especialista.
+- NO se DEBE añadir ninguna funcionalidad, caso de uso ni variante fuera de esas seis
   capacidades, por razonable que parezca.
+- Cada módulo DEBE mantener su alcance propio: una capacidad de un módulo NO DEBE ampliarse
+  para absorber trabajo que corresponde al otro.
 - Ante varias formas de resolver algo, se DEBE elegir siempre la más simple.
 
 **Justificación**: un alcance cerrado y la opción más simple evitan complejidad no requerida,
-que dificulta la verificación y la trazabilidad.
+que dificulta la verificación y la trazabilidad. Enumerar las capacidades por módulo mantiene
+el límite comprobable a medida que el proyecto crece.
 
 ### III. Trazabilidad
 
@@ -69,12 +87,23 @@ requisito identificable.
 **Justificación**: los datos de salud son categoría especial de datos personales; su exposición
 en un repositorio público es inaceptable.
 
-### V. Ejecución local
+### V. Ejecución local en contenedores
 
-- La aplicación DEBE poder arrancarse en local con un único comando.
+- La aplicación DEBE ejecutarse en contenedores.
+- El arranque completo DEBE lograrse con un único `docker compose up`, sin pasos manuales
+  previos ni posteriores: la creación del esquema de datos y cualquier inicialización
+  necesaria DEBEN producirse de forma automática dentro de ese arranque.
+- Los datos DEBEN persistirse en un volumen, de modo que sobrevivan a la parada y al reinicio
+  de los contenedores.
+- Toda la configuración (credenciales de base de datos, puertos, rutas y parámetros de
+  entorno) DEBE proporcionarse mediante variables de entorno. NO se DEBEN incrustar valores de
+  configuración en el código.
 - La ejecución NO DEBE requerir servicios de pago ni cuentas en plataformas externas.
 
-**Justificación**: cualquier persona evaluadora debe poder ejecutar la práctica sin barreras.
+**Justificación**: cualquier persona evaluadora debe poder ejecutar la práctica sin barreras y
+de forma reproducible en su máquina; los contenedores eliminan las diferencias de entorno, el
+volumen evita la pérdida de datos entre ejecuciones y la configuración externalizada permite
+cambiar el entorno sin tocar el código.
 
 ## Governance
 
@@ -91,4 +120,4 @@ en un repositorio público es inaceptable.
   DEBE verificar el cumplimiento de cada principio; cualquier incumplimiento DEBE señalarse y
   resolverse antes de continuar.
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-15 | **Last Amended**: 2026-09-17
+**Version**: 3.2.0 | **Ratified**: 2026-09-15 | **Last Amended**: 2026-09-28

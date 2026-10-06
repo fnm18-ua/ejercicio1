@@ -167,27 +167,244 @@ segunda**, seleccionados por afectar a la ejecución del trabajo.
 
 ## 6. Converge: diferencias con la implementación
 
-*(pendiente)*
+Se ejecutó `/speckit-converge` dos veces. Los informes literales están en
+[`informes/converge-inicial.md`](informes/converge-inicial.md) y
+[`informes/converge-final.md`](informes/converge-final.md).
+
+### Primera pasada (antes de implementar)
+
+La primera ejecución se hizo con las 22 tareas de la actualización aún
+pendientes, por lo que seis de sus siete hallazgos se limitaron a confirmar
+trabajo ya planificado: las cuatro líneas de código que `clarify` había
+señalado, el reloj de las pruebas web y el caso CL-C13 surgido de `analyze`.
+
+Aun así apareció un hallazgo que no tenía tarea asociada:
+
+**F7** — `web.py:598` y `:603` llamaban a `datetime.date.today()` por su
+cuenta, cuando la decisión D-C10 del plan establece que
+`servicio.momento_actual()` es el único punto que consulta el reloj. Se anexó
+como T060.
+
+F7 es relevante porque **ninguna de las dos pasadas de `analyze` podía
+detectarlo**: una regla del plan incumplida por el código no produce ninguna
+incoherencia entre spec, plan y tareas. Solo la convergencia, que contrasta los
+documentos con el código, podía encontrarlo.
+
+Junto con F5 —el mismo D-C10 incumplido en las pruebas— resulta que una sola
+decisión del plan se ignoró en dos sitios distintos sin que la revisión
+documental lo advirtiera.
+
+El dato que mejor resume esta fase: en el momento de la primera convergencia,
+las 167 pruebas pasaban en verde y existían siete diferencias respecto a la
+especificación, cinco de severidad alta.
+
+### Segunda pasada (después de implementar)
+
+| | Primera pasada | Segunda pasada |
+|---|---|---|
+| Críticos | 0 | 0 |
+| Altos | 5 | 0 |
+| Medios | 1 | 0 |
+| Bajos | 1 | 2 |
+
+Alcance revisado en la segunda pasada: 9 requisitos funcionales, 10 criterios
+de éxito, 36 escenarios de aceptación, 13 casos límite, 21 decisiones del plan
+y los 5 principios de la constitución.
+
+Los cinco comportamientos de la actualización están implementados y probados,
+los 13 criterios de aceptación y los 13 casos límite tienen prueba con su
+identificador en el nombre, los mensajes coinciden literalmente con el
+contrato, el reloj se consulta en un único punto y siguen existiendo
+exactamente las 11 rutas.
+
+Los dos hallazgos restantes son de trazabilidad en comentarios del código:
+
+- **T061**: cuatro docstrings cuyo alcance cambió en esta actualización sin que
+  su código se modificara. Se corrigen: es un descuido introducido ahora.
+- **T062**: quince funciones auxiliares anteriores a la actualización cuyos
+  docstrings no citan identificadores. Se deja documentada y sin corregir, por
+  el mismo criterio de parada aplicado en `analyze`: no afecta al
+  comportamiento ni a la ejecución del trabajo, y la trazabilidad se mantiene a
+  nivel de módulo.
 
 ## 7. Verificación de las correcciones
+Escenarios ejecutados sobre la aplicación en contenedor, con datos ficticios.
 
-*(pendiente)*
+> Nota: el contenedor opera en UTC, dos horas por detrás de la hora local. Las
+> reglas temporales se evalúan con la hora del contenedor; las horas indicadas
+> en estos escenarios son las del contenedor.
+
+### E1 · Reservar para un paciente existente y comprobar su identidad
+**Entrada:** _(código de historia clínica usado)_
+**Pasos:** _(…)_
+**Esperado:** la cita queda asociada a ese código; identificarse por documento
+devuelve las mismas citas (CA-C04).
+**Observado:**
+**Evidencia:**
+
+### E2 · Cancelar y consultar la disponibilidad
+**Esperado:** la cita pasa a «cancelada por el paciente» y su hueco vuelve a
+ofrecerse (CA-C06).
+
+### E3 · Reprogramar con éxito
+**Esperado:** misma cita y mismo especialista, hueco anterior libre y nuevo
+ocupado (CA-C09).
+
+### E4 · Reprogramar ante un fallo
+**Esperado:** se rechaza con su motivo y la cita original conserva fecha y hora.
+
+### E5 · Bloquear una franja con citas existentes
+**Esperado:** las citas futuras de dentro pasan a «cancelada por el centro» con
+su motivo; la confirmación muestra número, fecha, hora y motivo, y **ningún
+código de historia clínica** (PD-C22).
+
+### E6 · Cita ya pasada (decisión Q1)
+**Esperado:** se rechaza con «la cita ya ha pasado», no con el mensaje de las 24
+horas (CL-C10).
+
+### E7 · Duración sin huecos posibles (decisión Q2)
+**Esperado:** 300 minutos con horario de 9:00 a 13:00 se rechaza, la duración
+sigue en 20 y ninguna cita cambia de estado (CL-C11). 240 sí se acepta.
+
+### E8 · Franja ya pasada (decisión Q4)
+**Esperado:** bloquear ayer se rechaza; bloquear hoy con el tramo ya terminado
+se rechaza; bloquear hoy de 9:00 a 14:00 antes de las 14:00 se acepta (CL-C12).
+
+### E9 · Regresión del módulo de pacientes
+**Pasos:** registrar un paciente, buscarlo por documento y por código,
+modificar su teléfono.
+**Esperado:** las tres operaciones funcionan igual que antes.
+
+### Pruebas automáticas
+192 pruebas, todas en verde. Línea base antes de la actualización: 167.
 
 ## 8. Comparación del estado inicial y final
 
-*(pendiente)*
+**Estado inicial**: commit `947d2e9a142638b90c818b231a4f3cf9e8e5b406`, etiqueta
+`estado-inicial-ejercicio3`. Copia literal de los tres documentos en
+`memoria/estado-inicial/`.
+
+**Estado final**: commit `c540a19`.
+
+| | Inicial | Final |
+|---|---|---|
+| Casos límite | 9 | 13 |
+| Precisiones derivadas | 20 | 23 |
+| Criterios de éxito | 9 | 10 |
+| Tareas | 37 | 62 |
+| Pruebas automáticas | 167 | 192 |
+
+### Mejoras
+
+- **Cuatro ambigüedades funcionales resueltas** y convertidas en reglas con
+  criterio verificable: cita pasada, duración válida, datos en la confirmación
+  y franjas rechazables.
+- **Dos defectos que no habría detectado ninguna prueba**: las pruebas web
+  habrían empezado a fallar el 2026-10-08 por usar una fecha fija y consultar
+  el reloj real; y un hueco que empezaba justo en ese instante podía reservarse
+  dando lugar a una cita que nacía ya pasada y no se podía cancelar.
+- **Un dato personal retirado** de una pantalla sin control de acceso, por
+  minimización.
+- **17 incoherencias documentales corregidas** entre especificación, plan,
+  tareas, contratos y decisiones técnicas.
+
+### Una decisión revisada antes de llegar al código
+
+La decisión Q3 se tomó inicialmente retirando de la confirmación tanto el
+código de historia clínica como el motivo de cancelación. Antes de implementarla
+se revisó: el motivo no identifica a nadie y sí informa al administrativo de por
+qué se canceló cada cita. La minimización se aplica a los datos que identifican
+a la persona, no a toda la información de la operación.
+
+La corrección obligó a alinear cinco documentos que ya habían recogido la
+redacción anterior. El informe
+[`plan-actualizacion.md`](informes/plan-actualizacion.md) conserva a propósito
+la redacción original, con una nota posterior, como evidencia del estado
+intermedio.
+
+---
 
 ## 9. Qué aporta cada skill
 
-*(pendiente — se redacta al final, con ejemplos propios de cada categoría)*
+Las tres revisiones responden a preguntas distintas y ninguna sustituye a otra.
+
+### Clarify — ¿está decidido?
+
+Busca **dudas funcionales**: situaciones que la especificación no previó. No
+hay error en ninguna parte; simplemente nadie se planteó el caso, y el código
+hace lo que el documento dice.
+
+*Ejemplo propio:* la especificación permitía cancelar una cita ya celebrada,
+porque la excepción redactada para las reservas de última hora también encajaba
+con una cita pasada. El código la reproducía fielmente. No era un fallo de
+implementación: era una ambigüedad del requisito.
+
+Su mayor aportación no fueron las decisiones, sino que cada una llegó con el
+fichero y la línea exacta del código que pasaba a incumplir la especificación.
+
+### Analyze — ¿dicen lo mismo los documentos?
+
+Busca **incoherencias documentales**: contradicciones entre especificación,
+plan y tareas. Solo lee documentos, nunca código.
+
+*Ejemplo propio:* tras decidir que se rechazan las franjas ya pasadas, el
+apartado de supuestos seguía diciendo que se aceptaban sin efecto. Dos frases
+del mismo documento afirmando lo contrario.
+
+Enseñó también algo sobre el propio proceso: **corregir incoherencias genera
+incoherencias nuevas**, porque cada edición mueve texto que otros documentos
+citan. Cuatro de los once hallazgos de la segunda pasada los habían creado las
+correcciones de la primera.
+
+Y que **su severidad mide riesgo documental, no impacto funcional**: el único
+hallazgo que cambiaba el comportamiento de la aplicación iba clasificado como
+medio, por debajo de dos frases desalineadas marcadas como altas.
+
+### Converge — ¿hace el código lo que dicen los documentos?
+
+Busca **diferencias de implementación**: comportamiento que se aparta de lo
+definido, aunque todas las pruebas pasen y todas las tareas estén marcadas.
+
+*Ejemplo propio:* el plan establecía en D-C10 que un único punto del código
+consulta el reloj. La interfaz llamaba a `datetime.date.today()` por su cuenta
+en dos sitios. Ninguna de las dos pasadas de `analyze` podía detectarlo: no
+había ninguna contradicción entre documentos: la contradicción era entre el
+plan y el código.
+
+### El resumen de la práctica
+
+En el momento de la primera convergencia, el proyecto tenía **192 pruebas** —167
+entonces— **todas en verde, todas las tareas marcadas como completadas, y siete
+diferencias respecto a su propia especificación, cinco de severidad alta**.
+
+Esa es la lección: una aplicación que arranca y una batería en verde demuestran
+que el código hace lo que las pruebas comprueban, no que cumpla lo que la
+especificación define. Hacen falta tres revisiones distintas, porque cada una
+mira un plano diferente: `clarify` el requisito consigo mismo, `analyze` los
+documentos entre sí, `converge` los documentos contra el código.
 
 ---
 
 ## 10. Limitaciones pendientes
 
-- **Gestión de citas en nombre del paciente.** Al decidir la pregunta 3 se
-  identificó un caso de uso real —un paciente que cancela por error y necesita
-  recuperar su cita— que ninguna operación del módulo permite atender: el
-  administrativo no puede reservar por un paciente y una cita cancelada no
-  vuelve a estado reservada. Resolverlo requeriría una capacidad nueva, fuera
-  del alcance de esta práctica.
+- **Solapamiento por cambio de duración (PD-C20).** Al alargar las consultas, un
+  paciente puede quedar con dos citas solapadas de especialistas distintos y
+  ambas se conservan. CE-C03 se acotó para no prometer algo que el sistema no
+  cumple. Resolverlo sería comportamiento nuevo, fuera del alcance.
+- **Zona horaria del contenedor.** El contenedor opera en UTC, dos horas por
+  detrás de la hora local. Las tres reglas temporales se evalúan con esa hora,
+  de modo que un hueco puede seguir ofreciéndose después de su hora local. La
+  especificación declara que no se tratan zonas horarias, así que no es un
+  incumplimiento, pero afecta al uso real.
+- **Gestión de citas en nombre del paciente.** Un paciente que cancela por error
+  no puede recuperar su cita: el administrativo no puede reservar por él y una
+  cita cancelada no vuelve a estado reservada. Requeriría una capacidad nueva.
+- **Nueve hallazgos documentales de la segunda pasada de analyze** (I12 a I19 y
+  U4): recuentos, trazabilidad entre documentos, redacción de mensajes
+  equivalentes, el término «sede» en la definición de Centro y formato de
+  párrafos. Documentados y sin corregir.
+- **T062**: quince funciones auxiliares sin identificadores en su docstring.
+- **Sin control de acceso.** Heredado del alcance de las prácticas anteriores:
+  el código de historia clínica basta para ver y operar con las citas de un
+  paciente, y el flujo de agenda está abierto. La aplicación no es apta para
+  datos reales.

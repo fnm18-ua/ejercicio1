@@ -19,6 +19,7 @@ from urllib.parse import parse_qs, quote, urlsplit
 from programacion_citas import servicio
 from programacion_citas.servicio import (
     CitaNoEncontrada,
+    CitaPasada,
     CitaSolapada,
     CitaYaCancelada,
     ErrorValidacion,
@@ -345,7 +346,7 @@ class ManejadorCitas(ManejadorPacientes):
     # Ruta 6 · POST /citas/<id_cita>/cancelar
 
     def cancelar(self, id_cita, campos):
-        """Ruta 6: cancelar una cita reservada (RF-C06, CA-C06, CA-C07, CL-C07)."""
+        """Ruta 6: cancelar una cita reservada (RF-C06, CA-C06, CA-C07, CL-C07, CL-C10)."""
         codigo = self.identificar(campos)
         if codigo is None:
             return
@@ -356,7 +357,7 @@ class ManejadorCitas(ManejadorPacientes):
         except CitaNoEncontrada as error:
             self.responder_html(404, pagina_error("Cita no encontrada", str(error)))
             return
-        except (FueraDePlazo, CitaYaCancelada) as error:
+        except (FueraDePlazo, CitaPasada, CitaYaCancelada) as error:
             self.responder_html(409, pagina_error("No se puede cancelar", str(error)))
             return
         self.redirigir(f"/citas/mias?codigo={quote(codigo)}&aviso=cancelada")
@@ -364,7 +365,10 @@ class ManejadorCitas(ManejadorPacientes):
     # Ruta 7 · GET /citas/<id_cita>/reprogramar
 
     def mostrar_reprogramacion(self, id_cita, parametros):
-        """Ruta 7: elegir el hueco destino del mismo especialista (RF-C07, RN-C10, CL-C08)."""
+        """Ruta 7: elegir el hueco destino del mismo especialista (RF-C07, RN-C10, CL-C08).
+
+        Si la cita ya ha pasado, responde 409 sin ofrecer huecos (CL-C10, PD-C07).
+        """
         codigo = self.identificar(parametros)
         if codigo is None:
             return
@@ -380,7 +384,7 @@ class ManejadorCitas(ManejadorPacientes):
             return
         try:
             servicio._comprobar_plazo(cita, servicio.momento_actual())
-        except FueraDePlazo as error:
+        except (FueraDePlazo, CitaPasada) as error:
             self.responder_html(409, pagina_error("No se puede reprogramar", str(error)))
             return
         fecha = _valor(parametros, "fecha")
@@ -424,7 +428,7 @@ class ManejadorCitas(ManejadorPacientes):
     # Ruta 8 · POST /citas/<id_cita>/reprogramar
 
     def reprogramar(self, id_cita, campos):
-        """Ruta 8: guardar el traslado (RF-C07, CA-C09, CL-C08)."""
+        """Ruta 8: guardar el traslado (RF-C07, CA-C09, CL-C08, CL-C10)."""
         codigo = self.identificar(campos)
         if codigo is None:
             return
@@ -448,6 +452,7 @@ class ManejadorCitas(ManejadorPacientes):
             HuecoPasado,
             CitaSolapada,
             FueraDePlazo,
+            CitaPasada,
             CitaYaCancelada,
         ) as error:
             self.responder_html(409, pagina_error("No se puede reprogramar", str(error)))
@@ -514,7 +519,11 @@ class ManejadorCitas(ManejadorPacientes):
     # Rutas 10 y 11 · POST /agenda/bloquear y POST /agenda/duracion
 
     def _confirmar_canceladas(self, titulo, encabezado, canceladas, extra=""):
-        """Página de confirmación con las citas canceladas por el centro (PD-C11)."""
+        """Página de confirmación con las citas canceladas por el centro (PD-C11, PD-C22).
+
+        De cada cita muestra la fecha, la hora y el motivo de cancelación. No muestra el código de
+        historia clínica ni ningún otro dato que identifique al paciente (PD-C22, CE-C10, D-C19).
+        """
         cuerpo = [f"<p>{escapar(encabezado)}</p>\n"]
         if extra:
             cuerpo.append(f"<p>{escapar(extra)}</p>\n")
@@ -527,7 +536,6 @@ class ManejadorCitas(ManejadorPacientes):
             for cita in canceladas:
                 cuerpo.append(
                     f"<li>{escapar(cita.fecha)} a las {escapar(cita.hora_inicio)} · "
-                    f"paciente {escapar(cita.codigo_historia)} · "
                     f"motivo: {escapar(cita.motivo_cancelacion)}</li>\n"
                 )
             cuerpo.append("</ul>\n")
@@ -539,7 +547,11 @@ class ManejadorCitas(ManejadorPacientes):
         self.responder_html(200, pagina(titulo, "".join(cuerpo)))
 
     def bloquear(self, campos):
-        """Ruta 10: bloquear una franja (RF-C08, CA-C10, CL-C04, PD-C11, PD-C12)."""
+        """Ruta 10: bloquear una franja (RF-C08, CA-C10, CL-C04, PD-C11, PD-C12).
+
+        Una franja mal formada o entera en el pasado responde 400 con su motivo (PD-C23, CL-C12).
+        La confirmación no muestra datos del paciente (PD-C22, CE-C10).
+        """
         try:
             canceladas = servicio.bloquear_franja(
                 self.server.ruta_bd,
@@ -593,14 +605,19 @@ class ManejadorCitas(ManejadorPacientes):
 
 
 def _proxima_fecha_de_consulta(especialista):
-    """Primera fecha, a partir de hoy, en que el especialista pasa consulta (para la rejilla)."""
+    """Primera fecha, a partir de hoy, en que el especialista pasa consulta (para la rejilla).
+
+    La fecha de hoy se toma de `servicio.momento_actual`, que es el único punto del módulo que
+    consulta el reloj del sistema (D-C10).
+    """
     dias = servicio.agenda.dias_de_consulta(especialista.dias_semana)
-    fecha = datetime.date.today()
+    hoy = servicio.momento_actual().date()
+    fecha = hoy
     for _ in range(7):
         if fecha.isoweekday() in dias:
             return fecha.isoformat()
         fecha += datetime.timedelta(days=1)
-    return datetime.date.today().isoformat()
+    return hoy.isoformat()
 
 
 def crear_servidor(ruta_bd, host="127.0.0.1", puerto=8000):

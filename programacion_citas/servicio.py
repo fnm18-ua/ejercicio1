@@ -121,6 +121,13 @@ class FueraDePlazo(Exception):
         )
 
 
+class CitaPasada(Exception):
+    """La hora de inicio de la cita ya ha pasado (PD-C07, CL-C10)."""
+
+    def __init__(self):
+        super().__init__("No se puede cancelar ni reprogramar una cita cuya hora ya ha pasado.")
+
+
 class CitaYaCancelada(Exception):
     """La cita no está en estado reservada (CL-C07, CL-C08)."""
 
@@ -154,7 +161,8 @@ def _texto_momento(momento):
 
 
 def _minutos_hasta(momento, fecha, hora_inicio):
-    """Minutos desde `momento` hasta el inicio de una cita; negativo si ya pasó."""
+    """Minutos desde `momento` hasta una fecha y hora (el inicio de una cita o de un hueco, o el
+    fin de una franja); negativo si ya pasó."""
     inicio = datetime.datetime.combine(
         datetime.date.fromisoformat(fecha),
         datetime.time(agenda.a_minutos(hora_inicio) // 60, agenda.a_minutos(hora_inicio) % 60),
@@ -320,6 +328,9 @@ def consultar_huecos(ruta_bd, id_especialista, fecha, ahora):
 
     Excluye los ocupados por citas reservadas, los que caen en franja bloqueada (PD-C12) y los ya
     pasados (PD-C05). Lista vacía si no hay ninguno o si no es día de consulta (CL-C01, CL-C06).
+
+    Un hueco solo se ofrece si su inicio es estrictamente posterior a `ahora`: el que empieza
+    justo en `ahora` se trata como pasado (PD-C05, CL-C13, D-C21).
     """
     _validar_fecha(fecha)
     conexion = base_datos.conectar(ruta_bd)
@@ -339,7 +350,7 @@ def consultar_huecos(ruta_bd, id_especialista, fecha, ahora):
     for hora in rejilla:
         if hora in ocupados or hora in bloqueados:
             continue
-        if _minutos_hasta(ahora, fecha, hora) < 0:
+        if _minutos_hasta(ahora, fecha, hora) <= 0:
             continue
         libres.append(Hueco(hora, especialista.duracion_minutos, True))
     return libres
@@ -361,11 +372,16 @@ def _comprobar_solapamiento(conexion, codigo_historia, fecha, hora_inicio, durac
 
 
 def _comprobar_hueco(conexion, especialista, fecha, hora_inicio, ahora, excluir=None):
-    """Comprueba que el hueco existe, no ha pasado, no está bloqueado y no está ocupado."""
+    """Comprueba que el hueco existe, no ha pasado, no está bloqueado y no está ocupado.
+
+    Lo usan la reserva y el hueco destino de una reprogramación. Un hueco ha pasado cuando su
+    inicio no es estrictamente posterior a `ahora`, también si coincide con él, de modo que
+    ninguna cita nace ya pasada (PD-C05, CL-C13, D-C21).
+    """
     rejilla, bloqueados = _huecos_bloqueados(conexion, especialista, fecha)
     if hora_inicio not in rejilla:
         raise HuecoNoDisponible()
-    if _minutos_hasta(ahora, fecha, hora_inicio) < 0:
+    if _minutos_hasta(ahora, fecha, hora_inicio) <= 0:
         raise HuecoPasado()
     if hora_inicio in bloqueados:
         raise HuecoNoDisponible()
@@ -443,12 +459,20 @@ def _cita_del_paciente(conexion, codigo_historia, id_cita):
 
 
 def _comprobar_plazo(cita, ahora):
-    """Comprueba el plazo de RN-C09 (CA-C06, CA-C07, CA-C08, PD-C07).
+    """Comprueba que la cita no ha pasado y el plazo de RN-C09 (CA-C06 a CA-C08, CL-C10, PD-C07).
 
-    Se permite si faltan 24 horas o más para el inicio. Si falta menos, solo se permite cuando la
-    cita se reservó a menos de 24 horas de su inicio. `momento_reserva` es el de la última reserva
-    o reprogramación: reprogramar lo actualiza (PD-C07, aclaración Q2 del 2026-09-28).
+    Antes que nada, una cita cuya hora de inicio no es posterior a `ahora` está pasada y no se
+    puede cancelar ni reprogramar en ningún caso: se lanza `CitaPasada` y no `FueraDePlazo`
+    (PD-C07, aclaración Q1 del 2026-10-06; CL-C10; D-C17). Se comprueba primero porque la
+    excepción de las reservas con menos de 24 horas la dejaría pasar.
+
+    Para una cita futura: se permite si faltan 24 horas o más para el inicio. Si falta menos, solo
+    se permite cuando la cita se reservó a menos de 24 horas de su inicio. `momento_reserva` es el
+    de la última reserva o reprogramación: reprogramar lo actualiza (PD-C07, aclaración Q2 del
+    2026-09-28).
     """
+    if _minutos_hasta(ahora, cita.fecha, cita.hora_inicio) <= 0:
+        raise CitaPasada()
     if _minutos_hasta(ahora, cita.fecha, cita.hora_inicio) >= MINUTOS_24_HORAS:
         return
     reserva = datetime.datetime.strptime(cita.momento_reserva, "%Y-%m-%d %H:%M:%S")
@@ -461,6 +485,10 @@ def cancelar_cita(ruta_bd, codigo_historia, id_cita, ahora):
     """Cancela una cita reservada a petición del paciente (RF-C06, RN-C09, RN-C13).
 
     Deja la cita en `CANCELADA_PACIENTE` con su motivo y libera su hueco (CA-C06, PD-C04).
+
+    Comprueba, en este orden, que la cita es del paciente (`CitaNoEncontrada`), que está reservada
+    (`CitaYaCancelada`), que no ha pasado (`CitaPasada`; PD-C07, CL-C10, D-C17) y el plazo de las
+    24 horas (`FueraDePlazo`).
     """
     conexion = base_datos.conectar(ruta_bd)
     try:
@@ -488,6 +516,9 @@ def reprogramar_cita(ruta_bd, codigo_historia, id_cita, fecha, hora_inicio, ahor
     Conserva el identificador, el paciente y el especialista; cambia fecha, hora y el momento de
     referencia de las 24 horas (PD-C07, PD-C08, CA-C09). Es un UPDATE, nunca borrar e insertar, y
     el hueco anterior queda libre por el propio traslado.
+
+    Una cita cuya hora de inicio ya ha pasado no se reprograma: `_comprobar_plazo` lanza
+    `CitaPasada` y la cita conserva su fecha y su hora (CL-C10, PD-C07).
     """
     _validar_fecha(fecha)
     hora_inicio = _validar_hora(hora_inicio)
@@ -536,6 +567,11 @@ def bloquear_franja(
     La franja abarca un rango de fechas y un tramo horario que se aplica a cada día del rango
     (PD-C12). Solo se cancelan las citas FUTURAS (PD-C11): una cita cuya hora ya pasó no cambia de
     estado, porque es historial y no agenda. No está sujeta al plazo de 24 horas (RN-C11).
+
+    Se rechaza, sin registrar la franja ni cancelar ninguna cita, en tres casos y solo en ellos
+    (PD-C23, CL-C12, D-C20): fecha de fin anterior a la de inicio, hora de fin no posterior a la
+    de inicio, o franja entera en el pasado, es decir, cuando el momento que forman su fecha y su
+    hora de fin no es posterior a `ahora`. Cualquier otra franja se acepta aunque no tenga efecto.
     """
     _validar_fecha(fecha_inicio)
     _validar_fecha(fecha_fin)
@@ -545,6 +581,10 @@ def bloquear_franja(
         raise ErrorValidacion("La fecha de fin no puede ser anterior a la de inicio.")
     if agenda.a_minutos(hora_fin) <= agenda.a_minutos(hora_inicio):
         raise ErrorValidacion("La hora de fin debe ser posterior a la de inicio.")
+    if _minutos_hasta(ahora, fecha_fin, hora_fin) <= 0:
+        raise ErrorValidacion(
+            "No se puede bloquear una franja cuya fecha y hora de fin ya han pasado."
+        )
     conexion = base_datos.conectar(ruta_bd)
     try:
         conexion.execute("BEGIN IMMEDIATE")
@@ -596,6 +636,11 @@ def ajustar_duracion(ruta_bd, id_especialista, duracion_minutos, ahora):
     Limitación declarada (PD-C20): NO se vuelve a comprobar RN-C07. Si al alargarse las consultas
     dos citas de un mismo paciente pasan a solaparse, ambas se conservan. Es una limitación
     conocida y documentada, no un defecto silencioso.
+
+    La duración debe ser un entero mayor que cero y no superar los minutos entre la hora de inicio
+    y la hora de fin del horario, de modo que quepa al menos un hueco (PD-C21, CL-C11, D-C18). Si
+    no lo cumple se rechaza antes de actualizar: la duración no cambia y no se cancela ninguna
+    cita.
     """
     try:
         duracion_minutos = int(duracion_minutos)
@@ -609,6 +654,11 @@ def ajustar_duracion(ruta_bd, id_especialista, duracion_minutos, ahora):
         fila = base_datos.obtener_especialista(conexion, id_especialista)
         if fila is None:
             raise ErrorValidacion("El especialista indicado no existe.")
+        amplitud = agenda.a_minutos(fila["hora_fin"]) - agenda.a_minutos(fila["hora_inicio"])
+        if duracion_minutos > amplitud:
+            raise ErrorValidacion(
+                "Con esa duración no cabe ningún hueco en el horario del especialista."
+            )
         base_datos.actualizar_duracion(conexion, id_especialista, duracion_minutos)
         especialista = _a_especialista(
             base_datos.obtener_especialista(conexion, id_especialista)

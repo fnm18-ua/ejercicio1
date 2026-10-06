@@ -10,14 +10,8 @@ description: "Lista de tareas del módulo de Programación de Citas"
 **Requisitos previos**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md),
 [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md)
 
-**Pruebas**: incluidas. La especificación las exige en CE-C08 (superar los 13 CA-C y los 13 CL-C;
-eran 9 hasta el 2026-10-06) y el plan fija su forma en D-C15.
-
-**Actualización del 2026-10-06**: las tareas T001 a T037 corresponden al plan original y están
-completadas; se conservan como historial. Las tareas T038 a T057 (fases 10 a 15) llevan al código
-las cuatro respuestas de la sesión de aclaraciones del 2026-10-06, según la sección «Cambios
-respecto al plan implementado» de [plan.md](plan.md). Las tareas T058 y T059 (fase 16) añaden el
-caso límite CL-C13, decidido ese mismo día tras `/speckit-analyze` (hallazgo A1).
+**Pruebas**: incluidas. La especificación las exige en CE-C08 (superar los 13 CA-C y los 9 CL-C) y
+el plan fija su forma en D-C15.
 
 **Organización**: tareas agrupadas por historia de usuario (US1 a US6 = historias de usuario 1 a 6
 de [spec.md](spec.md)), para que cada una se implemente y se pruebe por separado.
@@ -48,7 +42,7 @@ de [spec.md](spec.md)), para que cada una se implemente y se pruebe por separado
   de espera; ni inicio de sesión; ni dependencias externas (solo biblioteca estándar de Python).
 - **Frontera entre módulos (principio II)**: **no se modifica `registro_pacientes/`**. La
   dependencia va en un solo sentido: `programacion_citas` importa de `registro_pacientes`, nunca al
-  contrario (D-C03, D-C04). El único archivo existente que se toca es `app.py`, y solo en T008.
+  contrario (D-C03, D-C04). El único archivo existente que se toca es `app.py`, y solo en T005.
 - **Datos ficticios (principio IV)**: todos los datos de precarga y de pruebas son inventados.
 - **Mensajes**: exactamente los de [contracts/servicio-citas.md](contracts/servicio-citas.md) y
   [contracts/interfaz-web-citas.md](contracts/interfaz-web-citas.md).
@@ -231,171 +225,6 @@ comprobar la nueva rejilla y el estado de cada cita.
 
 ---
 
-## Actualización del 2026-10-06 (fases 10 a 16)
-
-Tareas que llevan al código las aclaraciones del 2026-10-06. Rigen las mismas «Convenciones
-obligatorias» del principio, con estas precisiones:
-
-- **Archivos que se pueden tocar**: solo `programacion_citas/servicio.py`,
-  `programacion_citas/web.py`, `tests/utilidades_citas.py`, `tests/test_cancelacion.py`,
-  `tests/test_reprogramacion.py`, `tests/test_bloqueo.py`, `tests/test_duracion.py`,
-  `tests/test_web_citas.py` y, solo en la fase 16, `tests/test_reserva.py`. No se crea ningún
-  archivo, no cambia el esquema de datos y no se
-  toca `registro_pacientes/`, `app.py`, `agenda.py`, `base_datos.py` ni `datos_iniciales.py`.
-- **Mensajes nuevos**, exactamente estos tres (contracts/servicio-citas.md): «No se puede cancelar
-  ni reprogramar una cita cuya hora ya ha pasado.», «Con esa duración no cabe ningún hueco en el
-  horario del especialista.» y «No se puede bloquear una franja cuya fecha y hora de fin ya han
-  pasado.».
-- **Pruebas existentes**: no se renombra ni se elimina ninguna. Solo se modifican las que las
-  tareas T047 y T048 indican expresamente: dos cambian sus comprobaciones y otras dos solo amplían
-  su *docstring*.
-
----
-
-## Fase 10: Base de la actualización (bloquea las fases 11 a 14)
-
-**Propósito**: que las pruebas de la interfaz web dejen de depender del reloj real y que exista el
-error nuevo que usan las historias 3 y 4.
-
-**⚠️ CRÍTICO**: ninguna tarea de las fases 11 a 14 puede empezar hasta completar esta fase.
-
-- [X] T038 [P] Fijar el momento actual en las pruebas web, en `tests/utilidades_citas.py` (D-C10, D-C15): en `ServidorCitasTestCase.setUp`, después de `super().setUp()` y antes de crear el servidor, sustituir `programacion_citas.servicio.momento_actual` por una función que devuelva `MOMENTO_FIJO`, con `parche = unittest.mock.patch.object(servicio, "momento_actual", return_value=MOMENTO_FIJO)`, `parche.start()` y `self.addCleanup(parche.stop)`. Motivo comprobado el 2026-10-06: `programacion_citas/web.py` consulta el reloj real y las pruebas web usan `fecha_futura()`, que es la fecha fija 2026-10-08; con el reloj en 2026-10-09 fallan 10 de las 29 pruebas de `tests/test_web_citas.py`, así que la batería dejaría de pasar a partir del 2026-10-08. No cambiar `MOMENTO_FIJO`, `fecha_futura` ni `fecha_pasada`, ni ningún archivo de `programacion_citas/`. Comprobar que `python -m unittest tests.test_web_citas` sigue pasando entera
-- [X] T039 [P] Añadir a `programacion_citas/servicio.py` la excepción `CitaPasada`, justo después de `FueraDePlazo` y con su mismo estilo (PD-C07, PD-C18, CL-C10; D-C17): *docstring* «La hora de inicio de la cita ya ha pasado (PD-C07, CL-C10).» y mensaje exacto «No se puede cancelar ni reprogramar una cita cuya hora ya ha pasado.». En esta tarea solo se define la clase; todavía no la lanza ninguna función
-
-**Punto de control**: `python -m unittest` pasa entera, igual que antes de la actualización (167 pruebas).
-
----
-
-## Fase 11: Historia de usuario 3 - Una cita pasada no se cancela (Prioridad: P3)
-
-**Objetivo**: que el paciente no pueda cancelar una cita cuya hora de inicio ya ha pasado, aunque
-la reservara con menos de 24 horas de antelación, y que el rechazo diga que la cita ya ha pasado
-(PD-C07, CL-C10; escenario 5 de la historia 3).
-
-**Prueba independiente**: reservar una cita con menos de 24 horas de antelación, situar el momento
-actual después de su inicio, intentar cancelarla y comprobar que se rechaza con el motivo propio y
-que sigue reservada.
-
-### Pruebas de la historia 3 (escribir primero; deben fallar)
-
-- [X] T040 [P] [US3] Añadir a `PruebasCancelacion` en `tests/test_cancelacion.py` (depende de T039; importar `momento` y `fecha_futura` de `tests.utilidades_citas` si no lo están): `test_clc10_cancelar_una_cita_pasada_reservada_con_menos_de_24_horas_se_rechaza` reserva con `self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "06:00"))`, llama a `servicio.cancelar_cita` con `ahora=momento(fecha, "09:30")` y comprueba que lanza `servicio.CitaPasada` y que `self.estado_de(...)` sigue siendo `ESTADO_RESERVADA`; `test_clc10_cancelar_una_cita_pasada_reservada_con_antelacion_indica_que_ha_pasado` reserva con `ahora=MOMENTO_FIJO` (siete días antes), cancela con `ahora=momento(fecha, "09:30")` y comprueba que lanza `CitaPasada` y **no** `FueraDePlazo`; `test_pdc07_cancelar_justo_a_la_hora_de_inicio_se_rechaza` reserva con `ahora=momento(fecha, "06:00")`, cancela con `ahora=momento(fecha, "09:00")` y comprueba `CitaPasada` (una cita está pasada cuando su inicio no es posterior a `ahora`); `test_pdc07_cancelar_un_minuto_antes_del_inicio_se_permite` con la misma reserva y `ahora=momento(fecha, "08:59")` comprueba que la cita queda `ESTADO_CANCELADA_PACIENTE`. Añadir CL-C10 al *docstring* del módulo
-- [X] T041 [US3] Añadir a `PruebasWebCitas` en `tests/test_web_citas.py` la prueba `test_ruta6_cancelar_cita_pasada_responde_409` (CL-C10; depende de T038): crea la cita con `self.insertar_cita_pasada()`, envía `POST /citas/<id_cita>/cancelar` con el campo `codigo` y comprueba estado `409` y que el cuerpo contiene «cuya hora ya ha pasado»
-
-### Implementación de la historia 3
-
-- [X] T042 [US3] Modificar `_comprobar_plazo(cita, ahora)` en `programacion_citas/servicio.py` para que, **antes** de cualquier otra comprobación, lance `CitaPasada` cuando `_minutos_hasta(ahora, cita.fecha, cita.hora_inicio) <= 0` (PD-C07, CL-C10; D-C17; depende de T040). El resto de la función no cambia: la regla de las 24 horas de RN-C09 sigue igual para las citas futuras. Así el orden en `cancelar_cita` queda: cita del paciente (`CitaNoEncontrada`) → estado reservada (`CitaYaCancelada`) → no pasada (`CitaPasada`) → plazo (`FueraDePlazo`). Actualizar los *docstrings* de `_comprobar_plazo` y de `cancelar_cita` citando PD-C07 (aclaración Q1 del 2026-10-06), CL-C10 y D-C17
-- [X] T043 [US3] En la ruta 6 de `programacion_citas/web.py` (método `cancelar`), importar `CitaPasada` y añadirla a la tupla `except (FueraDePlazo, CitaYaCancelada)` para que responda `409` con el mensaje exacto de la excepción (CL-C10, PD-C18; depende de T041 y T042). Añadir CL-C10 al *docstring* del método
-
-**Punto de control**: T040 y T041 pasan; las pruebas anteriores de cancelación (CA-C06, CA-C07, CA-C08, CL-C07) siguen pasando sin modificarlas.
-
----
-
-## Fase 12: Historia de usuario 4 - Una cita pasada no se reprograma (Prioridad: P4)
-
-**Objetivo**: que el paciente no pueda reprogramar una cita cuya hora de inicio ya ha pasado y que
-la cita conserve su fecha y su hora (PD-C07, CL-C10; escenario 5 de la historia 4).
-
-**Prueba independiente**: con una cita cuya hora ya ha pasado, intentar trasladarla a un hueco
-libre y comprobar que se rechaza con el motivo propio y que la fecha y la hora no cambian.
-
-### Pruebas de la historia 4 (escribir primero; T045 debe fallar, T044 es de regresión)
-
-- [X] T044 [P] [US4] Añadir a `PruebasReprogramacion` en `tests/test_reprogramacion.py` (depende de T039). Son **pruebas de regresión**: `reprogramar_cita` comparte `_comprobar_plazo` con `cancelar_cita`, así que, siguiendo el orden de este archivo, T042 ya está hecha y estas pruebas pasan desde que se escriben, sin fallar antes. Fijan en el servicio el comportamiento de CL-C10 al reprogramar; la prueba de esta fase que sí debe fallar primero es T045. Pruebas: `test_clc10_reprogramar_una_cita_pasada_se_rechaza` reserva con `self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "06:00"))`, llama a `servicio.reprogramar_cita` hacia las `"11:00"` de la misma fecha con `ahora=momento(fecha, "09:30")` y comprueba que lanza `servicio.CitaPasada`, que la cita sigue en `ESTADO_RESERVADA` y que conserva `fecha` y `hora_inicio == "09:00"`; `test_clc10_el_rechazo_por_cita_pasada_precede_al_de_plazo` reserva con `ahora=MOMENTO_FIJO`, intenta reprogramar con `ahora=momento(fecha, "09:30")` y comprueba `CitaPasada` y **no** `FueraDePlazo`. Añadir CL-C10 al *docstring* del módulo
-- [X] T045 [US4] Añadir a `PruebasWebCitas` en `tests/test_web_citas.py` (CL-C10; depende de T038 y T041, mismo archivo): `test_ruta7_reprogramar_cita_pasada_responde_409` crea la cita con `self.insertar_cita_pasada()`, pide `GET /citas/<id_cita>/reprogramar?codigo=...` y comprueba `409`, que el cuerpo contiene «cuya hora ya ha pasado» y que no contiene ningún botón «Trasladar a»; `test_ruta8_reprogramar_cita_pasada_responde_409` envía `POST /citas/<id_cita>/reprogramar` con `codigo`, `fecha=fecha_futura()` y `hora_inicio="11:00"` y comprueba `409` con el mismo mensaje
-
-### Implementación de la historia 4
-
-- [X] T046 [US4] En `programacion_citas/web.py`, hacer que las rutas 7 y 8 respondan `409` con el mensaje exacto ante `CitaPasada` (CL-C10, PD-C18; depende de T043, T044 y T045): en `mostrar_reprogramacion`, cambiar `except FueraDePlazo` por `except (FueraDePlazo, CitaPasada)`, sin mostrar huecos; en `reprogramar`, añadir `CitaPasada` a la tupla de excepciones que responden `409`. `reprogramar_cita` del servicio no necesita cambios: ya usa `_comprobar_plazo` (T042); actualizar solo su *docstring* citando CL-C10. Añadir CL-C10 a los *docstrings* de los dos métodos web
-
-**Punto de control**: T044 y T045 pasan; las pruebas anteriores de reprogramación siguen pasando sin modificarlas, incluida `test_pdc07_reprogramar_actualiza_el_momento_de_reserva`.
-
----
-
-## Fase 13: Historia de usuario 5 - Franjas válidas y confirmación sin datos del paciente (Prioridad: P5)
-
-**Objetivo**: que el sistema rechace las franjas mal formadas y las que están enteras en el pasado,
-y que la confirmación al administrativo muestre solo el número de citas canceladas y la fecha y la
-hora de cada una, con su motivo (PD-C22, PD-C23, CL-C12, CE-C10; escenarios 7 a 11 de la historia
-5).
-
-**Prueba independiente**: intentar bloquear una franja de ayer, una de hoy ya terminada y una de
-hoy aún sin terminar, y comprobar cuáles se rechazan; bloquear una franja con una cita dentro y
-comprobar que la confirmación no contiene el código de historia clínica del paciente.
-
-### Pruebas de la historia 5 (escribir primero; deben fallar)
-
-- [X] T047 [P] [US5] Modificar y ampliar `PruebasBloqueo` en `tests/test_bloqueo.py` (PD-C23, CL-C12; D-C20). **Adaptar** `test_pdc11_el_bloqueo_no_altera_una_cita_pasada`: hoy bloquea una franja entera en el pasado, que pasará a rechazarse; debe llamar a `self.bloquear(fecha, fecha_fin=fecha_futura())` para que la franja cubra la cita pasada y su fin aún no haya llegado, manteniendo sus dos comprobaciones. **Añadir**, usando `hoy = MOMENTO_FIJO.date().isoformat()` y un atajo `franjas_registradas()` que devuelva `base_datos.franjas_de(conexion, self.especialista.id_especialista)`: `test_clc12_franja_con_fecha_de_fin_anterior_a_hoy_se_rechaza` llama a `self.bloquear(fecha_pasada())` y comprueba `servicio.ErrorValidacion` con el mensaje exacto «No se puede bloquear una franja cuya fecha y hora de fin ya han pasado.» y que `franjas_registradas()` está vacía; `test_clc12_franja_de_hoy_con_el_tramo_ya_terminado_se_rechaza` llama a `self.bloquear(hoy, hora_inicio="09:00", hora_fin="11:00", ahora=momento(hoy, "15:00"))` y comprueba el mismo error y que no se registra; `test_pdc23_franja_de_hoy_que_acaba_justo_ahora_se_rechaza` con `ahora=momento(hoy, "11:00")` comprueba el mismo error (el fin no es posterior a `ahora`); `test_pdc23_franja_de_hoy_cuya_hora_de_fin_no_ha_llegado_se_acepta` llama a `self.bloquear(hoy, hora_inicio="09:00", hora_fin="14:00", ahora=momento(hoy, "11:00"))` y comprueba que devuelve `[]` y que hay exactamente una franja registrada; `test_pdc23_franja_fuera_del_horario_se_acepta` bloquea de `"15:00"` a `"17:00"` en `fecha_futura()` y comprueba que devuelve `[]` y que se registra; `test_clc12_una_franja_rechazada_no_cancela_ninguna_cita` reserva una cita futura, intenta bloquear con `fecha_fin` anterior a `fecha_inicio` y comprueba que la cita sigue `ESTADO_RESERVADA`. **Ampliar el *docstring***, sin renombrarlas ni cambiar sus comprobaciones, de las dos pruebas existentes que ya verifican las franjas mal formadas, `test_rfc08_rango_de_fechas_invertido_se_rechaza` y `test_rfc08_horas_invertidas_se_rechazan`, para que citen CL-C12 y PD-C23 (casos a y b). Añadir CL-C12 y PD-C23 al *docstring* del módulo
-- [X] T048 [US5] Modificar y ampliar `PruebasWebCitas` en `tests/test_web_citas.py` (PD-C22, CE-C10, CL-C12; D-C19; depende de T038 y T045, mismo archivo). **Adaptar** `test_ruta10_bloquear_confirma_las_canceladas`: **conservar** la comprobación `assertIn(servicio.MOTIVO_FRANJA, cuerpo)`, porque el motivo de cancelación se sigue mostrando en cada línea (PD-C22), y añadir que el cuerpo contiene «Citas canceladas por el centro: 1», la fecha de la cita y «09:00», y que `assertNotIn(self.codigo, cuerpo)` (el código de historia clínica del paciente no aparece). De D-C19 se aplica solo la retirada del código: el motivo se conserva por decisión de la persona responsable del 2026-10-06. **Añadir** `test_ruta10_franja_pasada_responde_400`, que envía `POST /agenda/bloquear` con `fecha_inicio` y `fecha_fin` iguales a `fecha_pasada()` y comprueba `400` y que el cuerpo contiene «cuya fecha y hora de fin ya han pasado»
-
-### Implementación de la historia 5
-
-- [X] T049 [US5] Añadir a `bloquear_franja` en `programacion_citas/servicio.py` la tercera validación, después de las dos existentes y antes de abrir la conexión (PD-C23, CL-C12; D-C20; depende de T047): componer el momento de fin con `fecha_fin` y `hora_fin` y, si **no es posterior a `ahora`**, lanzar `ErrorValidacion` con el mensaje exacto «No se puede bloquear una franja cuya fecha y hora de fin ya han pasado.». Regla de data-model.md, citada literalmente: «el momento `fecha_fin` + `hora_fin` no es posterior a `ahora`»; ejemplos con ahora = hoy a las 11:00: «hoy de 9:00 a 11:00 → rechazada; hoy de 9:00 a 14:00 → aceptada; ayer de 9:00 a 14:00 → rechazada». El orden de las tres validaciones es: `fecha_fin` anterior a `fecha_inicio`, `hora_fin` no posterior a `hora_inicio`, franja entera en el pasado. No rechazar ninguna otra franja: las que no tienen efecto se aceptan. Actualizar el *docstring* citando PD-C23, CL-C12 y D-C20
-- [X] T050 [US5] Modificar `_confirmar_canceladas` en `programacion_citas/web.py` para que cada línea del listado muestre la fecha, la hora y el motivo de cancelación de la cita, sin ningún dato del paciente, con la forma `<li>{fecha} a las {hora_inicio} · motivo: {motivo_cancelacion}</li>` (PD-C22, CE-C10; D-C19 solo en la retirada del código; depende de T048): eliminar de la línea **únicamente** el texto «paciente» con `cita.codigo_historia`, y no añadir ningún otro dato identificativo. El motivo se conserva por decisión de la persona responsable del 2026-10-06: no identifica al paciente y confirma al administrativo por qué se canceló cada cita. Se conservan también el número de citas canceladas, el aviso «No se ha cancelado ninguna cita.», el aviso de que las citas pasadas no se cancelan y el escapado de todo dato. La función la comparten las rutas 10 y 11, así que el cambio vale para las dos. La ruta 10 no necesita más cambios: ya responde `400` ante `ErrorValidacion`. Actualizar los *docstrings* de `_confirmar_canceladas` y de `bloquear` citando PD-C22, CE-C10, PD-C23 y CL-C12
-
-**Punto de control**: T047 y T048 pasan; las demás pruebas de bloqueo (CA-C10, CA-C11, CL-C04, PD-C12, RN-C04, RN-C11) siguen pasando sin modificarlas.
-
----
-
-## Fase 14: Historia de usuario 6 - Duración de consulta válida (Prioridad: P6)
-
-**Objetivo**: que el sistema rechace una duración con la que no cabe ningún hueco en el horario
-del especialista, sin cambiar la duración ni cancelar citas (PD-C21, CL-C11; escenarios 5 y 6 de
-la historia 6).
-
-**Prueba independiente**: con un especialista de horario de 9:00 a 13:00 y una cita futura,
-intentar pasar la duración a 300 minutos y comprobar que se rechaza, que la duración sigue en 20 y
-que la cita sigue reservada; comprobar que 240 minutos sí se acepta.
-
-### Pruebas de la historia 6 (escribir primero; deben fallar)
-
-- [X] T051 [P] [US6] Añadir a `PruebasDuracion` en `tests/test_duracion.py` (PD-C21, CL-C11; D-C18): `test_clc11_duracion_sin_hueco_posible_se_rechaza_sin_cambiar_nada` reserva una cita futura a las `"09:00"`, llama a `self.ajustar(300)` y comprueba `servicio.ErrorValidacion` con el mensaje exacto «Con esa duración no cabe ningún hueco en el horario del especialista.», que `servicio.obtener_especialista(...).duracion_minutos` sigue siendo `20` y que la cita sigue `ESTADO_RESERVADA`; `test_pdc21_duracion_un_minuto_mayor_que_el_horario_se_rechaza` comprueba el mismo error con `241`; `test_pdc21_duracion_igual_al_horario_se_acepta` llama a `self.ajustar(240)` y comprueba que no lanza error y que `self.horas_libres()` es `["09:00"]`. Añadir CL-C11 y PD-C21 al *docstring* del módulo
-- [X] T052 [US6] Añadir a `PruebasWebCitas` en `tests/test_web_citas.py` (PD-C21, PD-C22, CL-C11, CE-C10; depende de T038 y T048, mismo archivo): `test_ruta11_duracion_sin_hueco_responde_400` envía `POST /agenda/duracion` con `duracion_minutos=300` y comprueba `400`, que el cuerpo contiene «no cabe ningún hueco» y que la duración del especialista sigue siendo `20`; `test_ruta11_la_confirmacion_no_muestra_datos_del_paciente` reserva una cita futura a las `"09:20"`, envía `duracion_minutos=30` y comprueba `200`, que el cuerpo contiene «Citas canceladas por el centro: 1», «09:20» y el motivo `servicio.MOTIVO_DURACION` («Cambio de la duración de las consultas»), y `assertNotIn(self.codigo, cuerpo)`
-
-### Implementación de la historia 6
-
-- [X] T053 [US6] Añadir a `ajustar_duracion` en `programacion_citas/servicio.py` la validación de PD-C21, dentro de la transacción, después de comprobar que el especialista existe y **antes** de `base_datos.actualizar_duracion` (PD-C21, CL-C11; D-C18; depende de T051): si `duracion_minutos` es mayor que `agenda.a_minutos(hora_fin) - agenda.a_minutos(hora_inicio)` del especialista, lanzar `ErrorValidacion` con el mensaje exacto «Con esa duración no cabe ningún hueco en el horario del especialista.»; el `ROLLBACK` existente deja la duración como estaba y no se cancela ninguna cita. Regla de data-model.md, citada literalmente: «la nueva duración debe ser un entero mayor que cero y no superar los minutos entre `hora_inicio` y `hora_fin`»; «con horario de 9:00 a 13:00 se aceptan de 1 a 240 minutos y se rechazan 241 o más». Conservar las dos validaciones existentes (entero, mayor que cero) y **no** añadir ningún `CHECK` al esquema. Actualizar el *docstring* citando PD-C21, CL-C11 y D-C18. La ruta 11 de `programacion_citas/web.py` no necesita cambios: ya responde `400` ante `ErrorValidacion` y usa `_confirmar_canceladas` (T050)
-
-**Punto de control**: T051 y T052 pasan; las demás pruebas de duración (CA-C12, CL-C05, PD-C10, PD-C11, PD-C20) siguen pasando sin modificarlas.
-
----
-
-## Fase 15: Cierre de la actualización
-
-**Propósito**: comprobar que la actualización no ha roto nada y que no se ha tocado nada fuera de
-su alcance.
-
-- [X] T054 Ejecutar `python -m unittest` y comprobar que pasa entera: las 167 pruebas anteriores a la actualización, con solo las dos adaptadas en T047 y T048, más las nuevas de T040, T041, T044, T045, T047, T048, T051 y T052 y, si la fase 16 ya está hecha, las de T058 (CE-C08, CE-C10). Si falla alguna otra prueba existente por bloquear una franja entera en el pasado, adaptarla igual que en T047 y dejar constancia en la nota final de este archivo
-- [X] T055 Revisar con `git diff --name-only` que los únicos archivos de código y de pruebas modificados son los de la lista «Archivos que se pueden tocar» de esta actualización, y que no aparece `registro_pacientes/`, `app.py`, `tests/utilidades.py`, `programacion_citas/agenda.py`, `programacion_citas/base_datos.py` ni `programacion_citas/datos_iniciales.py`. Si aparece cualquier otro, revertirlo (principio III, D-C03)
-- [X] T056 Ejecutar `docker compose up --build` y recorrer los pasos nuevos de [quickstart.md](quickstart.md): paso 5 de «E-C03 · Cancelar» (CL-C10), pasos 3, 8, 9 y 10 de «E-C04 · Bloquear una franja» (PD-C22, CL-C12, PD-C23), pasos 6 y 7 de «E-C05 · Ajustar la duración» (CL-C11, PD-C22) y la sección «PD-C11 · Las citas pasadas no se tocan» con una franja cuyo fin aún no ha llegado
-- [X] T057 Repasar la tabla de «Comprobación de la constitución» de [plan.md](plan.md) contra los cambios: mensajes nuevos en español y con el vocabulario del principio I, ninguna funcionalidad fuera de PD-C07, de PD-C21 a PD-C23 y de PD-C05 con CL-C13 (fase 16), trazabilidad en los *docstrings* de todo lo modificado y datos ficticios en las pruebas nuevas
-
----
-
-## Fase 16: Historia de usuario 1 - Un hueco que empieza justo ahora no se reserva (Prioridad: P1)
-
-**Objetivo**: que un hueco solo sea reservable si su hora de inicio es estrictamente posterior al
-momento actual, de modo que ninguna cita nazca ya pasada y sin poder cancelarse (PD-C05, CL-C13;
-D-C21).
-
-**Origen**: decisión de la persona responsable del 2026-10-06 sobre el hallazgo A1 de
-`/speckit-analyze`. Es posterior a las fases 10 a 15 y no depende de ninguna de ellas.
-
-**Prueba independiente**: situar el momento actual exactamente en el inicio de un hueco libre,
-consultar los huecos y comprobar que ese no se ofrece; intentar reservarlo y comprobar que se
-rechaza; repetir un minuto antes y comprobar que se reserva y que la cita se puede cancelar.
-
-### Pruebas de la historia 1 (escribir primero; deben fallar)
-
-- [X] T058 [US1] Añadir las pruebas de CL-C13 (PD-C05, PD-C07, PD-C08; D-C21). En `PruebasReserva` de `tests/test_reserva.py`, con `fecha = fecha_futura()`: `test_clc13_hueco_que_empieza_justo_ahora_no_se_ofrece` llama a `self.horas_libres(fecha=fecha, ahora=momento(fecha, "09:00"))` y comprueba que `"09:00"` no está en la lista y que su primer elemento es `"09:20"`; `test_clc13_reservar_un_hueco_que_empieza_justo_ahora_se_rechaza` llama a `self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "09:00"))` y comprueba que lanza `servicio.HuecoPasado`; `test_pdc05_hueco_que_empieza_un_minuto_despues_se_reserva_y_se_puede_cancelar` reserva con `ahora=momento(fecha, "08:59")`, comprueba `ESTADO_RESERVADA` y después cancela con `servicio.cancelar_cita(..., ahora=momento(fecha, "08:59"))`, comprobando que queda `ESTADO_CANCELADA_PACIENTE` (toda cita recién reservada se puede cancelar). En `PruebasReprogramacion` de `tests/test_reprogramacion.py`: `test_clc13_reprogramar_a_un_hueco_que_empieza_justo_ahora_se_rechaza` reserva una cita en `fecha_futura(dias=14)` a las `"09:00"` con `ahora=MOMENTO_FIJO`, intenta reprogramarla a `fecha_futura(dias=7)` a las `"09:00"` con `ahora=momento(fecha_futura(dias=7), "09:00")` y comprueba que lanza `servicio.HuecoPasado` y que la cita conserva su fecha y su hora. Las dos primeras pruebas y la última deben fallar antes de T059; la tercera ya pasa y fija el comportamiento que no debe cambiar. No se marca [P] porque comparte `tests/test_reprogramacion.py` con T044. Añadir CL-C13 al *docstring* de los dos módulos
-
-### Implementación de la historia 1
-
-- [X] T059 [US1] En `programacion_citas/servicio.py`, tratar como pasado el hueco cuyo inicio no es estrictamente posterior a `ahora` (PD-C05, CL-C13; D-C21; depende de T058): en `consultar_huecos`, cambiar la condición que descarta el hueco de `_minutos_hasta(ahora, fecha, hora) < 0` a `<= 0`; en `_comprobar_hueco`, cambiar la condición que lanza `HuecoPasado` de `_minutos_hasta(ahora, fecha, hora_inicio) < 0` a `<= 0`. `_comprobar_hueco` la usan `reservar_cita` y `reprogramar_cita`, así que el cambio cubre la reserva y el hueco destino de una reprogramación. Regla de data-model.md, citada literalmente: «Su inicio es **estrictamente posterior** al momento actual»; «Pasado si `inicio <= ahora`; reservable, futuro o cancelable solo si `inicio > ahora`». No cambia el mensaje de `HuecoPasado`, no se añade ningún error y no se toca `programacion_citas/web.py`, que ya responde `409` con ese mensaje. Actualizar los *docstrings* de `consultar_huecos` y de `_comprobar_hueco` citando PD-C05, CL-C13 y D-C21
-
-**Punto de control**: T058 pasa; `python -m unittest` pasa entera, incluidas `test_rnc08_hueco_pasado_se_rechaza` y `test_rnc08_se_puede_reservar_para_el_mismo_dia` sin modificarlas, y `git diff --name-only` no muestra ningún archivo fuera de la lista «Archivos que se pueden tocar». Si esta fase se ejecuta antes que la fase 15, esas dos comprobaciones quedan cubiertas por T054 y T055.
-
----
-
 ## Dependencias y orden de ejecución
 
 ### Dependencias entre fases
@@ -416,30 +245,6 @@ Fase 1 → Fase 2 → US1 ─┬→ US2 → US3 → US4
                                    └→ Fase 9 (tras US4 y US6)
 ```
 
-### Dependencias de la actualización del 2026-10-06 (fases 10 a 16)
-
-- **Base de la actualización (fase 10)**: depende de las fases 1 a 9, ya completadas; bloquea las
-  fases 11 a 14.
-- **US3 (fase 11)**: depende de la fase 10.
-- **US4 (fase 12)**: depende de US3, porque reprogramar reutiliza la comprobación que cambia T042.
-- **US5 (fase 13)**: depende de la fase 10; funcionalmente no depende de US3 ni de US4.
-- **Dependencias de archivo, no funcionales**: T045, T048 y T052 se encadenan (T041 → T045 → T048
-  → T052) solo porque las cuatro editan `tests/test_web_citas.py`. Es un orden de edición para no
-  pisarse en el mismo archivo: si las dos ramas se llevan en paralelo, basta con no editar ese
-  archivo a la vez, y T048 no necesita que T045 esté hecha.
-- **US6 (fase 14)**: depende de la fase 10 y, solo para la prueba de la confirmación (T052), de
-  T050 de US5, porque las rutas 10 y 11 comparten `_confirmar_canceladas`.
-- **Cierre (fase 15)**: depende de las fases 11 a 14.
-- **US1 (fase 16)**: no depende funcionalmente de ninguna otra fase de la actualización. Comparte
-  `programacion_citas/servicio.py` con T042, T049 y T053, y `tests/test_reprogramacion.py` con
-  T044, así que no debe editarse a la vez que ellas. Puede hacerse antes o después del cierre; si
-  se hace después, su punto de control repite la batería completa y la revisión de archivos.
-
-```text
-Fase 10 ─┬→ US3 (fase 11) → US4 (fase 12) ─┐
-         └→ US5 (fase 13) → US6 (fase 14) ─┴→ Fase 15
-```
-
 ### Dentro de cada historia
 
 - Las pruebas se escriben primero y deben fallar.
@@ -453,12 +258,6 @@ Fase 10 ─┬→ US3 (fase 11) → US4 (fase 12) ─┐
 - **US2/US3/US4 y US5/US6 son las dos ramas paralelas** del grafo: una persona puede llevar el flujo del paciente (US2→US3→US4) y otra el de la agenda (US5→US6) en cuanto US1 esté terminada.
 - Las tareas de implementación **dentro** de una misma rama no se marcan [P] porque comparten `programacion_citas/servicio.py` y `programacion_citas/web.py`.
 - Fase 9: T032 y T033 en paralelo; después T034 → T035 → T036 → T037.
-- Fase 10: T038 y T039 en paralelo (archivos distintos).
-- Fases 11 a 14: las cuatro tareas de pruebas del servicio, T040, T044, T047 y T051, tocan
-  archivos distintos y pueden escribirse a la vez en cuanto termine la fase 10.
-- Las tareas de pruebas web (T041, T045, T048 y T052) **no** se marcan [P]: todas editan
-  `tests/test_web_citas.py`. Las de implementación tampoco: comparten
-  `programacion_citas/servicio.py` y `programacion_citas/web.py`.
 
 ---
 
@@ -500,20 +299,6 @@ Rama B (flujo de la agenda):      T026 → T027 → T028 → T029 → T030 → T
 Cada historia añade valor sin romper las anteriores: los puntos de control exigen que las pruebas
 de las historias previas sigan pasando.
 
-### Actualización del 2026-10-06
-
-El MVP y las seis historias ya están entregados; la actualización se entrega en este orden:
-
-1. Fase 10 → las pruebas web dejan de depender de la fecha real. Es lo más urgente: sin T038 la
-   batería deja de pasar a partir del 2026-10-08.
-2. US3 y US4 (fases 11 y 12) → validar → se corrige el defecto que permitía cancelar o
-   reprogramar una cita ya celebrada. Es el incremento mínimo con valor propio.
-3. US5 (fase 13) → validar → el administrativo deja de ver el código de historia clínica y las
-   franjas pasadas se rechazan.
-4. US6 (fase 14) → validar → una duración imposible ya no cancela todas las citas.
-5. Fase 15 → cierre y validación en contenedor.
-6. US1 (fase 16) → validar → un hueco que empieza justo ahora ya no se puede reservar (CL-C13).
-
 ---
 
 ## Notas
@@ -529,18 +314,3 @@ El MVP y las seis historias ya están entregados; la actualización se entrega e
   `/agenda`. No hay ninguna tarea que lo cambie, porque significaría modificar el módulo de
   registro y ninguna parte de la especificación lo pide. Si se decide añadir los enlaces, debe
   hacerse como una tarea nueva y explícita, no de pasada.
-- **Punto cerrado (D-C20)**: las frases de [spec.md](spec.md) que conservaban la redacción
-  anterior de la franja pasada, solo por fecha, se alinearon con PD-C23 el 2026-10-06 tras
-  `/speckit-analyze`, y la historia 5 ganó los escenarios 10 y 11. Las tareas T047 y T049 siguen
-  ese criterio: se rechaza la franja cuya **fecha y hora** de fin ya han pasado.
-- **Decisión cerrada (D-C19)**: la confirmación al administrativo conserva el motivo de
-  cancelación en cada línea. La persona responsable lo decidió el 2026-10-06: el motivo no
-  identifica al paciente y confirma por qué se canceló cada cita. T050 retira únicamente el
-  código de historia clínica, y T048 conserva la comprobación del motivo. PD-C22 y CE-C10 de
-  [spec.md](spec.md) lo recogen así.
-
----
-
-## Fase 17: Convergencia
-
-- [X] T060 En `programacion_citas/web.py`, hacer que `_proxima_fecha_de_consulta` obtenga la fecha de hoy de `servicio.momento_actual().date()` en lugar de llamar dos veces a `datetime.date.today()`, para que `servicio.momento_actual` sea el único punto del módulo que consulta el reloj del sistema y las pruebas web con el momento fijado (T038) no dependan de la fecha real; no cambia el contenido de la confirmación de la ruta 11 ni se toca ningún otro archivo, según plan: D-C10 y la convención «Momento actual» de este archivo (`contradicts`)

@@ -1,13 +1,19 @@
 # Investigación y decisiones técnicas: Módulo de Programación de Citas
 
-**Funcionalidad**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md) · **Fecha**: 2026-09-28
+**Funcionalidad**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md) · **Fecha**: 2026-09-28 ·
+**Actualizada**: 2026-10-06 (D-C17 a D-C20, tras la segunda sesión de aclaraciones; D-C21, tras
+`/speckit-analyze`)
 
 Cada decisión indica qué requisito, regla o precisión de la especificación resuelve (principio
 III de la constitución) y qué alternativas se descartaron. Las decisiones se numeran `D-C01`…
 para no colisionar con las `D-01`…`D-10` del módulo de registro.
 
 No queda ninguna `NEEDS CLARIFICATION`: las tres ambigüedades de la especificación se cerraron en
-la sesión de aclaraciones del 2026-09-28 (PD-C07, PD-C11, PD-C12).
+la sesión de aclaraciones del 2026-09-28 (PD-C07, PD-C11, PD-C12) y las cuatro de la sesión del
+2026-10-06, en PD-C07 y PD-C21 a PD-C23. Las decisiones D-C17 a D-C20 llevan esas cuatro
+respuestas al diseño; D-C01 a D-C16 no cambian salvo las dos notas que se indican en D-C15 y
+D-C16. D-C21 recoge la decisión de la persona responsable sobre el hallazgo A1 de
+`/speckit-analyze` (PD-C05, CL-C13).
 
 ## D-C01 · Tecnología: reutilizar el stack del módulo de registro
 
@@ -207,7 +213,9 @@ la sesión de aclaraciones del 2026-09-28 (PD-C07, PD-C11, PD-C12).
 - **Decisión**: `unittest` (`python -m unittest`), con archivos nuevos en `tests/` y un módulo
   propio de utilidades (`utilidades_citas.py`) que crea una base de datos temporal con datos
   ficticios y permite fijar el momento actual (D-C10). No se modifica ninguna prueba existente.
-- **Justificación**: CE-C08 exige superar los 13 CA-C y los 9 CL-C, y el módulo de registro ya
+- **Justificación**: CE-C08 exige superar los 13 CA-C y los 13 CL-C (eran 9 hasta el 2026-10-06:
+  la sesión de aclaraciones añadió CL-C10 a CL-C12 y la decisión sobre el hallazgo A1 de
+  `/speckit-analyze` añadió CL-C13), y el módulo de registro ya
   fijó esta forma de trazar pruebas a requisitos (D-02). La aritmética de `agenda.py` se prueba
   además de forma unitaria, porque CA-C01, CA-C12 y CL-C05 son afirmaciones numéricas exactas.
 - **Comprobación previa ya realizada**: los tres predicados temporales reproducen los criterios
@@ -237,3 +245,115 @@ la sesión de aclaraciones del 2026-09-28 (PD-C07, PD-C11, PD-C12).
   de dar por hecha una seguridad que no existe.
 - **Alternativas descartadas**: implementar autenticación (fuera de alcance, contra el principio
   II); no documentar la limitación (dejaría el riesgo invisible, que es lo contrario de CESI2).
+- **Medida añadida el 2026-10-06**: las confirmaciones del flujo administrativo dejan de mostrar
+  el código de historia clínica de los pacientes afectados (PD-C22, D-C19). Es la única
+  minimización de datos que cabe dentro del alcance y cierra la vía por la que `/agenda`
+  entregaba la credencial de hecho de un paciente a quien no la tenía.
+
+## D-C17 · Cita pasada: comprobación previa al plazo y error propio
+
+- **Decisión**: la comprobación de plazo de cancelar y reprogramar evalúa primero si la cita ya
+  ha pasado y, en ese caso, lanza un error nuevo, `CitaPasada`, con el mensaje «No se puede
+  cancelar ni reprogramar una cita cuya hora ya ha pasado.». El orden de comprobaciones queda:
+  cita del paciente → estado reservada → **no pasada** → plazo de 24 horas. Una cita está pasada
+  cuando su inicio no es posterior a `ahora`, el mismo criterio con el que PD-C11 separa las
+  citas futuras.
+- **Justificación**: PD-C07 (aclaración Q1 del 2026-10-06) prohíbe cancelar o reprogramar una
+  cita pasada «en ningún caso» y exige que el rechazo diga que la cita ya ha pasado, no que está
+  fuera de plazo (PD-C18, CL-C10). Hasta ahora la excepción de las reservas con menos de 24 horas
+  dejaba pasar justo ese caso, porque a una cita pasada también le «falta menos de 24 horas».
+  Comprobarlo antes del plazo corrige el defecto sin tocar la regla de RN-C09 para las citas
+  futuras.
+- **Alternativas descartadas**: reutilizar `FueraDePlazo` (contradice PD-C18: el mensaje de las
+  24 horas es falso para una cita ya celebrada); impedirlo solo en la interfaz ocultando los
+  botones (la regla quedaría sin proteger en el servicio y sin prueba posible de CL-C10);
+  añadir un estado «atendida» (fuera de alcance, PD-C14).
+
+## D-C18 · Duración válida: comparación con la amplitud del horario, en el servicio
+
+- **Decisión**: `ajustar_duracion` rechaza con `ErrorValidacion` y el mensaje «Con esa duración
+  no cabe ningún hueco en el horario del especialista.» cuando la duración supera los minutos
+  entre la hora de inicio y la hora de fin del horario. La comprobación se hace dentro de la
+  transacción, después de leer el especialista y **antes** de actualizar la duración, de modo que
+  el rechazo no cambia nada. Las dos validaciones existentes (entero, mayor que cero) se
+  conservan.
+- **Justificación**: PD-C21 y CL-C11 exigen que un valor sin hueco posible se rechace sin
+  cambiar la duración, sin recalcular la rejilla y sin cancelar citas. Comparar con la amplitud
+  del horario es la traducción directa de «cabe al menos un hueco» (PD-C03) y no depende de
+  ninguna fecha.
+- **Alternativas descartadas**: generar la rejilla de una fecha y comprobar si sale vacía
+  (depende de elegir un día de consulta, cuando el resultado no depende del día); un `CHECK` en
+  la tabla `especialista` (compararía un entero con horas guardadas como texto y obligaría a
+  recrear una tabla ya desplegada, sin requisito que lo pida); pedir confirmación al
+  administrativo antes de aplicar (un paso nuevo de interfaz que la especificación no recoge).
+
+## D-C19 · Confirmación al administrativo: número, fecha, hora y motivo, sin datos del paciente
+
+- **Decisión**: la página de confirmación de bloquear franja y de ajustar duración muestra el
+  número de citas canceladas y, de cada una, la fecha, la hora y el motivo de cancelación. Se
+  retira únicamente el código de historia clínica, y no se muestra ningún otro dato que
+  identifique al paciente. El servicio sigue devolviendo la lista de citas canceladas; es la
+  interfaz la que no muestra la identidad.
+- **Justificación**: PD-C22 y CE-C10 fijan qué ve el administrativo y prohíben cualquier dato que
+  identifique al paciente. Sin control de acceso (PD-C02), el código de historia clínica es la
+  credencial de hecho, y `/agenda` está abierta a cualquiera: es el punto de D-C16 donde la
+  minimización de datos (RGPD, art. 5.1.c; competencia CESI2) sí es aplicable sin ampliar el
+  alcance. El motivo se conserva porque no identifica al paciente y confirma al administrativo
+  por qué se canceló cada cita.
+- **Revisión del 2026-10-06**: la primera redacción de esta decisión retiraba también el motivo
+  por línea. La persona responsable decidió conservarlo, y PD-C22 y CE-C10 lo recogen así.
+- **Alternativas descartadas**: retirar también el motivo por línea (descartada por la persona
+  responsable: es información útil para el administrativo y no es un dato del paciente); que el
+  servicio deje de devolver las citas y devuelva solo pares de fecha y hora (obliga a reescribir
+  las pruebas que comprueban el estado de las citas canceladas, sin que la especificación lo
+  exija: lo que PD-C22 regula es lo que se muestra); enmascarar el código (sigue siendo un dato
+  del paciente que el administrativo no necesita).
+
+## D-C20 · Franja pasada: comparación de la fecha y hora de fin con `ahora`, en el servicio
+
+- **Decisión**: `bloquear_franja` rechaza con `ErrorValidacion` y el mensaje «No se puede
+  bloquear una franja cuya fecha y hora de fin ya han pasado.» cuando el momento formado por
+  `fecha_fin` y `hora_fin` no es posterior a `ahora`. Se evalúa después de las dos validaciones
+  de forma ya existentes y antes de abrir la transacción: no se registra la franja ni se cancela
+  ninguna cita. Un bloqueo de hoy de 9:00 a 14:00 solicitado a las 11:00 se acepta; uno de hoy
+  de 9:00 a 11:00 solicitado a las 15:00 se rechaza.
+- **Justificación**: PD-C23 y CL-C12, en la redacción que la persona responsable fijó el
+  2026-10-06: «fecha y hora de fin ya pasadas», no solo la fecha. `ahora` ya llega como
+  parámetro (D-C10), así que la regla es determinista en las pruebas.
+- **Por qué no es una restricción del esquema**: una condición que depende del momento actual no
+  se puede expresar como `CHECK`, y además una franja válida al crearse pasa a estar en el pasado
+  con el tiempo sin dejar de ser correcta.
+- **Consecuencia sobre lo ya construido**: PD-C11 (un bloqueo no altera una cita pasada) deja de
+  poder probarse con una franja entera en el pasado, que ahora se rechaza. Se prueba con una
+  franja que empieza en el pasado y cuyo fin aún no ha llegado.
+- **Discrepancia ya resuelta** (principio III): varios puntos de la especificación conservaban la
+  redacción anterior, solo por fecha (el supuesto «Bloqueos sobre fechas pasadas», la entidad
+  «Franja bloqueada», PD-C18 y la entrada de la pregunta 4 en «Aclaraciones»). Se alinearon con
+  PD-C23 el 2026-10-06, tras `/speckit-analyze`, y la historia 5 ganó los escenarios 10 y 11.
+- **Alternativas descartadas**: comparar solo la fecha de fin (era la lectura inicial y fue
+  corregida); rechazar también las franjas sin efecto, como un tramo fuera del horario (PD-C23
+  las acepta expresamente).
+
+## D-C21 · Hueco reservable solo si su inicio es estrictamente posterior a `ahora`
+
+- **Decisión**: un hueco se trata como pasado cuando su inicio **no es estrictamente posterior**
+  a `ahora`, es decir, también cuando coincide con él. Cambia la comparación en los dos puntos
+  del servicio que deciden si un hueco ha pasado: la consulta de huecos libres y la comprobación
+  del hueco al reservar y al reprogramar, que comparten criterio. Se reutiliza el error
+  `HuecoPasado` con su mensaje actual, «No se puede reservar un hueco cuya hora ya ha pasado.»;
+  no hay error ni mensaje nuevos.
+- **Justificación**: PD-C05 y CL-C13, por decisión de la persona responsable del 2026-10-06
+  sobre el hallazgo A1 de `/speckit-analyze`. Hasta ahora un hueco cuyo inicio coincidía con el
+  momento actual se podía reservar, y la cita resultante nacía ya pasada: no era futura para
+  PD-C11 ni se podía cancelar según PD-C07. Con la comparación estricta, PD-C05 (hueco
+  reservable), PD-C07 (cita pasada) y PD-C11 (cita futura) usan un único criterio, y toda cita
+  recién reservada o reprogramada es futura.
+- **Comprobado el 2026-10-06**: simulando la comparación estricta en esos dos puntos, las 167
+  pruebas existentes siguen pasando; ninguna reserva un hueco en el instante exacto de su inicio.
+- **Sin cambios en el esquema ni en la interfaz**: la regla depende del momento actual, así que
+  no puede ser una restricción de la base de datos, y la interfaz ya responde `409` con el
+  mensaje de `HuecoPasado`.
+- **Alternativas descartadas**: mantener reservable el hueco que empieza justo ahora y permitir
+  cancelar la cita en su instante inicial (contradice PD-C07, que da por pasada la cita cuyo
+  inicio coincide con el momento actual); exigir una antelación mínima para reservar (RN-C08
+  dice expresamente que no la hay).

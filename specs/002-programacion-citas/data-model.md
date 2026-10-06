@@ -41,6 +41,12 @@ Dato precargado, sin alta ni edición (RN-C01, PD-C19).
 `duracion_minutos` es el **único** campo que la aplicación permite cambiar, mediante RF-C09. El
 horario (días y horas) es precargado e inmutable (RN-C01, PD-C19).
 
+**Regla de validación al cambiarla** (PD-C21, CL-C11, D-C18): la nueva duración debe ser un entero
+mayor que cero y no superar los minutos entre `hora_inicio` y `hora_fin`, de modo que quepa al
+menos un hueco. La comprueba el servicio antes de actualizar; no es un `CHECK` del esquema, que
+se queda en `duracion_minutos > 0`. Con horario de 9:00 a 13:00 se aceptan de 1 a 240 minutos y
+se rechazan 241 o más.
+
 ## Tabla `cita` · RF-C04 a RF-C07, RN-C05, RN-C06, RN-C13
 
 | Columna | Tipo | Restricciones | Requisito |
@@ -108,6 +114,20 @@ día, con `fecha_inicio = fecha_fin`.
 No existe operación de desbloqueo: las filas de esta tabla no se borran ni se editan (PD-C13,
 RF-C08).
 
+**Reglas de validación al bloquear** (PD-C23, CL-C12, D-C20). El servicio rechaza la franja, sin
+insertar la fila ni cancelar ninguna cita, en estos tres casos y solo en ellos:
+
+| Caso | Regla | Ejemplo (ahora = hoy a las 11:00) |
+|---|---|---|
+| (a) Rango invertido | `fecha_fin` anterior a `fecha_inicio` | del día 20 al día 15 → rechazada |
+| (b) Tramo invertido o vacío | `hora_fin` no posterior a `hora_inicio` | de 11:00 a 11:00 → rechazada |
+| (c) Franja entera en el pasado | el momento `fecha_fin` + `hora_fin` no es posterior a `ahora` | hoy de 9:00 a 11:00 → rechazada; hoy de 9:00 a 14:00 → aceptada; ayer de 9:00 a 14:00 → rechazada |
+
+El caso (c) depende del momento actual, así que no puede ser una restricción del esquema: una
+franja válida al crearse acaba quedando en el pasado sin dejar de ser correcta. Cualquier otra
+franja se acepta aunque no tenga efecto (tramo fuera del horario, rango sin días de consulta,
+rango que empieza en el pasado y cuyo fin aún no ha llegado).
+
 ## Entidad derivada: `hueco` · RN-C03, RN-C04, PD-C03
 
 Un hueco **no se almacena** (D-C05). Se calcula al consultarlo y se describe con especialista,
@@ -130,7 +150,9 @@ fecha, hora de inicio y duración vigente.
 
 1. No lo ocupa ninguna cita en estado `RESERVADA` del mismo especialista, fecha y hora de inicio.
 2. No cae dentro de ninguna franja bloqueada de ese especialista (ver criterio de extremos abajo).
-3. Su inicio no es anterior al momento actual (RN-C08, PD-C05).
+3. Su inicio es **estrictamente posterior** al momento actual (RN-C08, PD-C05, CL-C13, D-C21). Un
+   hueco cuyo inicio coincide con el momento actual ya no está libre ni se puede reservar, de
+   modo que ninguna cita nace ya pasada.
 
 ## Criterio de extremos en las comparaciones temporales · PD-C06, PD-C12
 
@@ -142,6 +164,7 @@ forma uniforme, las tres comparaciones del módulo:
 | Solapamiento de dos citas de un paciente (RN-C07, PD-C06) | Se solapan si `a_inicio < b_fin` y `b_inicio < a_fin` | Dos citas consecutivas de 20 min (9:00 y 9:20) **no** se solapan; una de 30 min a las 9:00 y otra a las 9:20 **sí** |
 | Hueco dentro de una franja (PD-C12) | Bloqueado si `hueco_inicio < franja_fin` y `franja_inicio < hueco_fin` | Con franja 9:00–11:00 y duración 20: se bloquean 9:00, 10:00 y 10:40 (que acaba justo a las 11:00) y no las de 11:00 en adelante — exactamente CA-C10 |
 | Encaje en la rejilla nueva (RN-C12, PD-C10) | Encaja si su hora de inicio es el inicio de un hueco nuevo y `inicio + nueva duración <= hora_fin` | Al pasar de 20 a 30 min, la cita de 9:00 encaja y la de 9:20 no — exactamente CA-C12 |
+| Hueco o cita respecto al momento actual (PD-C05, PD-C07, PD-C11; D-C17, D-C21) | Pasado si `inicio <= ahora`; reservable, futuro o cancelable solo si `inicio > ahora` | A las 9:00 en punto, el hueco de las 9:00 no se ofrece ni se puede reservar (CL-C13) y una cita de las 9:00 ya no se puede cancelar (CL-C10); a las 8:59, sí |
 
 ## Ciclo de vida de una cita · RN-C06, RN-C09 a RN-C12
 
@@ -172,6 +195,9 @@ forma uniforme, las tres comparaciones del módulo:
 - De `CANCELADA_PACIENTE` a `CANCELADA_CENTRO` ni al contrario.
 - `RESERVADA` → cancelada por el paciente fuera del plazo de RN-C09 (CA-C07). El centro no tiene
   ese límite (RN-C11).
+- `RESERVADA` → cancelada por el paciente, o reprogramada, cuando la hora de inicio de la cita ya
+  ha pasado, aunque se hubiera reservado con menos de 24 horas de antelación (PD-C07, CL-C10,
+  aclaración Q1 del 2026-10-06). Una cita pasada conserva su estado, su fecha y su hora.
 - Ningún bloqueo ni cambio de duración altera una cita cuya hora ya ha pasado (PD-C11,
   aclaración Q3 del 2026-09-28): es historial, no agenda.
 
@@ -188,6 +214,9 @@ base de datos:
 | Ninguna cita `RESERVADA` **futura** cae en franja bloqueada ni fuera de la rejilla vigente | Cancelación por el centro al bloquear y al cambiar duración (RN-C11, RN-C12) | CE-C02 |
 | Toda cita referencia un paciente existente | `REFERENCES paciente (codigo_historia)` | RN-C05 |
 | El identificador de una cita no cambia nunca | Reprogramar es `UPDATE`, nunca borrar e insertar | CE-C05, CA-C09 |
+| Todo especialista tiene al menos un hueco en sus días de consulta | Validación de la duración en el servicio antes de actualizarla (D-C18) | PD-C21, CL-C11 |
+| Ninguna cita pasada cambia de estado, de fecha ni de hora | El centro solo alcanza a las citas futuras (PD-C11) y el paciente no puede cancelar ni reprogramar una cita pasada (D-C17) | PD-C07, CL-C10 |
+| Toda cita recién reservada o reprogramada es futura | El hueco destino solo es reservable si su inicio es estrictamente posterior al momento actual (D-C21) | PD-C05, CL-C13 |
 
 ## Ejemplo (datos ficticios) · principio IV
 

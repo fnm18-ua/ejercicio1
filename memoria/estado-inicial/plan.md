@@ -1,15 +1,9 @@
 # Plan de implementación: Módulo de Programación de Citas
 
 **Rama**: `002-programacion-citas` (carpeta de la funcionalidad; se trabaja sobre `master`) |
-**Fecha**: 2026-09-28 | **Actualizado**: 2026-10-06 | **Especificación**: [spec.md](spec.md)
+**Fecha**: 2026-09-28 | **Especificación**: [spec.md](spec.md)
 
 **Entrada**: especificación de la funcionalidad en `specs/002-programacion-citas/spec.md`
-
-> **Actualización del 2026-10-06**: el plan original ya está implementado. Esta revisión
-> incorpora las cuatro respuestas de la sesión de aclaraciones del 2026-10-06 (PD-C07 reescrita,
-> PD-C21 a PD-C23, CL-C10 a CL-C12 y CE-C10). No cambia la tecnología, la estructura ni el
-> esquema de datos: añade cuatro reglas al servicio y a la interfaz. El detalle de lo que cambia
-> respecto a lo construido está en «Cambios respecto al plan implementado».
 
 ## Resumen
 
@@ -31,13 +25,6 @@ garantiza con un índice único parcial en la base de datos, no con una comproba
 afirmaciones numéricas exactas de CA-C01, CA-C12 y CL-C05 (D-C15). El servidor sigue siendo uno y
 el puerto sigue siendo uno: el manejador de citas hereda del de registro (D-C13).
 
-Las cuatro reglas añadidas el 2026-10-06 se resuelven en el servicio, donde ya vive toda la lógica
-de negocio, y ninguna toca el esquema: una cita pasada no se cancela ni se reprograma y lo dice
-con un error propio (D-C17); una duración con la que no cabe ningún hueco se rechaza antes de
-actualizar (D-C18); la confirmación al administrativo muestra el número de citas canceladas y, de
-cada una, la fecha, la hora y el motivo, sin datos del paciente (D-C19); y una franja mal formada
-o con su fecha y hora de fin ya pasadas se rechaza (D-C20).
-
 ## Contexto técnico
 
 **Lenguaje/Versión**: Python 3.10 o superior (imagen del contenedor: `python:3.12-slim`) — D-C01
@@ -49,7 +36,7 @@ o con su fecha y hora de fin ya pasadas se rechaza (D-C20).
 `RUTA_BD`), con cinco tablas nuevas: `centro`, `especialidad`, `especialista`, `cita` y
 `franja_bloqueada` — D-C02
 
-**Pruebas**: `unittest` (`python -m unittest`), una prueba por CA-C01 a CA-C13 y CL-C01 a CL-C13,
+**Pruebas**: `unittest` (`python -m unittest`), una prueba por CA-C01 a CA-C13 y CL-C01 a CL-C09,
 más pruebas unitarias de la aritmética de `agenda.py` y de las precisiones PD-C verificables —
 D-C15
 
@@ -82,7 +69,7 @@ Constitución vigente: **v3.2.0**.
 | I. Idioma | Interfaz, mensajes y documentación en español; paquete, módulos, tablas y campos en español sin tildes ni eñes (`franja_bloqueada`, `dias_semana`, `duracion_minutos`, `motivo_cancelacion`). Vocabulario del principio I en su versión 3.2.0: cita, especialista, especialidad, centro, agenda, hueco y franja bloqueada. | ✅ | ✅ Los 7 términos nuevos del principio I son los que usan `data-model.md` y los contratos. Los únicos nombres en inglés son los que impone la biblioteca estándar y no se pueden renombrar (`do_GET`, `do_POST`, `setUp`, el prefijo `test_`). |
 | II. Alcance mínimo | Solo las tres capacidades del módulo de citas (capacidades 4, 5 y 6 del principio II). Sin alta ni edición de centros, especialidades o especialistas; sin notificaciones, sin listas de espera, sin desbloqueo de franjas, sin inicio de sesión. Sin dependencias nuevas. | ✅ | ✅ 11 rutas y 5 tablas, todas trazadas abajo. En cada decisión de research.md se eligió la alternativa más simple, incluido no renombrar la base de datos (D-C02) y no materializar los huecos (D-C05). |
 | II. Frontera entre módulos | Ninguna capacidad de citas absorbe trabajo del módulo de registro: este módulo no crea, modifica ni borra pacientes; solo los identifica. | ✅ | ✅ La dependencia es en un solo sentido (citas → registro, D-C04) y el módulo de registro no se modifica (D-C03, D-C13). |
-| III. Trazabilidad | Cada elemento del plan remite a RF-C, RN-C, CA-C, CL-C o PD-C. Las siete ambigüedades detectadas se preguntaron al usuario en vez de suponerlas (sesiones de aclaraciones 2026-09-28 y 2026-10-06). La segunda sesión cierra además tres comportamientos que el código tenía sin requisito detrás: la validación de la duración, la validación de la franja y el contenido de la confirmación al administrativo. | ✅ | ✅ Ver «Trazabilidad de la estructura». Sin ambigüedades abiertas. Se señala, sin resolverlo inventando, un punto abierto: el enlace desde `/` a los dos flujos (D-C14). Las frases de la especificación que conservaban la redacción anterior de la franja pasada (D-C20) se alinearon con PD-C23 el 2026-10-06. |
+| III. Trazabilidad | Cada elemento del plan remite a RF-C, RN-C, CA-C, CL-C o PD-C. Las tres ambigüedades detectadas se preguntaron al usuario en vez de suponerlas (sesión de aclaraciones 2026-09-28). | ✅ | ✅ Ver «Trazabilidad de la estructura». Sin ambigüedades abiertas. El único punto abierto (enlace desde `/` a los dos flujos) se señala como decisión pendiente en D-C14, no se resuelve inventando. |
 | IV. Datos ficticios | Centros, especialidades, especialistas y citas de ejemplo inventados, tanto en la precarga como en las pruebas y la documentación. | ✅ | ✅ `datos_iniciales.py` y los ejemplos de `data-model.md` y `quickstart.md` usan solo datos inventados (D-C12). |
 | V. Ejecución local en contenedores | No se añade ningún servicio ni dependencia: el módulo entra en el contenedor existente, con la misma base de datos en el mismo volumen y la misma configuración por variables de entorno. Un solo `docker compose up`. | ✅ | ✅ Un único servidor y un único puerto (D-C13); precarga idempotente para que arranques repetidos no dupliquen datos (D-C12). |
 
@@ -97,9 +84,7 @@ Constitución vigente: **v3.2.0**.
 - **CESI2**: D-C16 recoge las medidas aplicadas (escapado de salida, SQL parametrizado, datos
   ficticios) y declara de forma explícita la limitación de no tener control de acceso (PD-C02),
   con su lectura bajo el artículo 9 del RGPD y el ENS. La aplicación no es apta para datos reales
-  de pacientes, y se deja constancia en vez de darlo por supuesto. Desde el 2026-10-06 se añade
-  una medida de minimización de datos (RGPD, art. 5.1.c): el flujo administrativo deja de mostrar
-  el código de historia clínica de los pacientes cuyas citas cancela (PD-C22, CE-C10, D-C19).
+  de pacientes, y se deja constancia en vez de darlo por supuesto.
 
 ## Estructura del proyecto
 
@@ -107,9 +92,9 @@ Constitución vigente: **v3.2.0**.
 
 ```text
 specs/002-programacion-citas/
-├── spec.md              # Especificación (/speckit-specify + aclaraciones 2026-09-28 y 2026-10-06)
+├── spec.md              # Especificación (/speckit-specify + aclaraciones 2026-09-28)
 ├── plan.md              # Este archivo (/speckit-plan)
-├── research.md          # Fase 0: decisiones técnicas D-C01 a D-C21
+├── research.md          # Fase 0: decisiones técnicas D-C01 a D-C16
 ├── data-model.md        # Fase 1: 5 tablas, invariantes, ciclo de vida de la cita
 ├── quickstart.md        # Fase 1: arranque, pruebas y validación manual
 ├── contracts/
@@ -141,11 +126,11 @@ tests/
 ├── utilidades_citas.py         # Base de datos temporal, datos ficticios y momento actual fijable
 ├── test_agenda.py              # CA-C01, CL-C05, PD-C03, PD-C06, PD-C10, PD-C12 (sin base de datos)
 ├── test_reserva.py             # CA-C02, CA-C03, CA-C04, CA-C05, CL-C01, CL-C02, CL-C03, CL-C06, CL-C09
-├── test_cancelacion.py         # CA-C06, CA-C07, CA-C08, CL-C07, CL-C10
-├── test_reprogramacion.py      # CA-C09, CL-C08, CL-C10, PD-C07, PD-C08
-├── test_bloqueo.py             # CA-C10, CA-C11, CL-C04, CL-C12, PD-C11, PD-C12, PD-C23
-├── test_duracion.py            # CA-C12, CL-C11, PD-C10, PD-C11, PD-C20, PD-C21
-└── test_web_citas.py           # CA-C13, PD-C22, CE-C10 y respuestas de las 11 rutas
+├── test_cancelacion.py         # CA-C06, CA-C07, CA-C08, CL-C07
+├── test_reprogramacion.py      # CA-C09, CL-C08, PD-C07, PD-C08
+├── test_bloqueo.py             # CA-C10, CA-C11, CL-C04, PD-C11, PD-C12
+├── test_duracion.py            # CA-C12, PD-C10, PD-C11, PD-C20
+└── test_web_citas.py           # CA-C13 y respuestas de las 11 rutas
 datos/                          # (sin cambios) creada en ejecución; persistida en el volumen
 ```
 
@@ -166,68 +151,21 @@ la precarga de RN-C01 del esquema; `web.py` solo traduce entre peticiones HTTP y
 | `agenda.py` | RN-C03, RN-C04, RN-C07, RN-C12; PD-C03, PD-C05, PD-C06, PD-C10, PD-C12; CA-C01, CA-C12, CL-C05, CL-C06 |
 | `base_datos.py` | RN-C02, RN-C05, RN-C06, RN-C13; PD-C04, PD-C09, PD-C17; CL-C03 (esquema, `CHECK` e índice único parcial; ver data-model.md) |
 | `datos_iniciales.py` | RN-C01, RN-C02; PD-C19; CA-C13; principio IV |
-| `servicio.py` | RF-C01 a RF-C09; RN-C07 a RN-C12; PD-C01, PD-C07, PD-C08, PD-C11, PD-C14, PD-C15, PD-C18, PD-C21, PD-C23; CL-C10, CL-C11, CL-C12; D-C17, D-C18, D-C20 |
-| `web.py` | RF-C01 a RF-C09; PD-C02, PD-C16, PD-C18, PD-C22; CA-C13; CE-C10; D-C13, D-C14, D-C19 |
+| `servicio.py` | RF-C01 a RF-C09; RN-C07 a RN-C12; PD-C01, PD-C07, PD-C08, PD-C11, PD-C14, PD-C15, PD-C18 |
+| `web.py` | RF-C01 a RF-C09; PD-C02, PD-C16, PD-C18; CA-C13; D-C13, D-C14 |
 | `app.py` (cambio mínimo) | D-C13; principio V |
 | Importación de `registro_pacientes.servicio` | RF-C01, RN-C05, CA-C04; PD-C01; D-C04 |
-| `tests/` | CE-C08: CA-C01 a CA-C13, CL-C01 a CL-C13 y las PD-C verificables; CE-C10 |
-
-## Cambios respecto al plan implementado
-
-Lo que la actualización del 2026-10-06 obliga a modificar en lo ya construido. No se crea ningún
-archivo de código ni de pruebas, no cambia el esquema y no hace falta migrar datos.
-
-| Archivo | Cambio | Requisito | Decisión |
-|---|---|---|---|
-| `programacion_citas/servicio.py` | Error nuevo `CitaPasada`; la comprobación de plazo rechaza primero la cita cuyo inicio no es posterior a `ahora`. Afecta a cancelar y a reprogramar. | PD-C07, CL-C10, PD-C18 | D-C17 |
-| `programacion_citas/servicio.py` | `ajustar_duracion` rechaza la duración que supera la amplitud del horario, antes de actualizar. | PD-C21, CL-C11 | D-C18 |
-| `programacion_citas/servicio.py` | `bloquear_franja` rechaza la franja cuya fecha y hora de fin no son posteriores a `ahora`. Las dos validaciones de forma ya existían y pasan a estar trazadas. | PD-C23, CL-C12 | D-C20 |
-| `programacion_citas/web.py` | Las rutas 6, 7 y 8 responden `409` con el mensaje de cita pasada. | CL-C10 | D-C17 |
-| `programacion_citas/web.py` | La confirmación de las rutas 10 y 11 muestra el número de citas canceladas y, de cada una, la fecha, la hora y el motivo: se retira únicamente el código de historia clínica. | PD-C22, CE-C10 | D-C19 |
-| `programacion_citas/servicio.py` | Un hueco se trata como pasado cuando su inicio no es estrictamente posterior a `ahora`: la consulta de huecos y la comprobación del hueco al reservar y al reprogramar pasan de `< 0` a `<= 0`. Sin error ni mensaje nuevos. | PD-C05, CL-C13 | D-C21 |
-| `tests/utilidades_citas.py` | `ServidorCitasTestCase` fija el momento actual sustituyendo `servicio.momento_actual` por `MOMENTO_FIJO`. Las pruebas web usaban el reloj real con la fecha fija 2026-10-08 y dejarían de pasar a partir de ese día (comprobado el 2026-10-06: con el reloj en 2026-10-09 fallan 10 de las 29). Es la primera tarea de la actualización (T038), porque las pruebas web nuevas también necesitan un momento actual conocido. | CE-C08 | D-C10, D-C15 |
-
-**Pruebas nuevas**, en los archivos existentes:
-
-| Archivo | Prueba | Verifica |
-|---|---|---|
-| `tests/test_cancelacion.py` | Cancelar una cita pasada reservada con menos de 24 horas de antelación se rechaza con `CitaPasada` y la cita sigue reservada | CL-C10, PD-C07 |
-| `tests/test_reprogramacion.py` | Reprogramar una cita pasada se rechaza con `CitaPasada` y conserva fecha y hora | CL-C10, PD-C07 |
-| `tests/test_duracion.py` | 300 minutos en un horario de 9:00 a 13:00 se rechaza, la duración sigue en 20 y ninguna cita se cancela; 240 minutos se acepta | CL-C11, PD-C21 |
-| `tests/test_bloqueo.py` | Franja con fecha de fin anterior a hoy se rechaza; franja de hoy con el tramo ya terminado se rechaza; franja de hoy de 9:00 a 14:00 a las 11:00 se acepta; en los rechazos no se registra la franja | CL-C12, PD-C23 |
-| `tests/test_web_citas.py` | La confirmación de las rutas 10 y 11 contiene el número, la fecha, la hora y el motivo de cancelación, y no contiene el código de historia clínica del paciente | PD-C22, CE-C10 |
-| `tests/test_reserva.py`, `tests/test_reprogramacion.py` | Un hueco que empieza justo en el momento actual no se ofrece, no se puede reservar ni sirve de destino de una reprogramación; un minuto antes sí se reserva y la cita se puede cancelar | CL-C13, PD-C05 |
-| `tests/test_web_citas.py` | Las rutas 6 y 8 responden `409` ante una cita pasada; las rutas 10 y 11 responden `400` ante la franja pasada y la duración sin hueco | CL-C10, CL-C11, CL-C12 |
-
-**Prueba existente que deja de ser válida** y hay que adaptar:
-
-- `tests/test_bloqueo.py::test_pdc11_el_bloqueo_no_altera_una_cita_pasada` bloquea una franja
-  entera en el pasado, que ahora se rechaza (PD-C23). Debe usar una franja que cubra la cita
-  pasada y cuyo fin aún no haya llegado.
-
-**Prueba existente que sigue siendo válida** y solo se amplía:
-
-- `tests/test_web_citas.py::test_ruta10_bloquear_confirma_las_canceladas` comprueba que la
-  confirmación contiene el motivo de cancelación, que se sigue mostrando (D-C19). Conserva esa
-  comprobación y añade las del número, la fecha, la hora y la ausencia del código de historia
-  clínica (PD-C22, CE-C10).
-
-Puede haber alguna más que bloquee franjas pasadas; se detectará al ejecutar la batería completa.
+| `tests/` | CE-C08: CA-C01 a CA-C13, CL-C01 a CL-C09 y las PD-C verificables |
 
 ## Seguimiento de complejidad
 
 No aplica: la comprobación de la constitución no muestra violaciones.
 
-## Puntos abiertos para la persona responsable
+## Punto abierto para la persona responsable
 
-Ninguno bloquea la fase 2.
-
-El punto sobre la redacción anterior de la franja pasada en la especificación (D-C20) quedó
-cerrado el 2026-10-06: tras `/speckit-analyze`, las frases de `spec.md` que seguían diciendo «solo
-por fecha» se alinearon con PD-C23 y la historia 5 ganó los escenarios 10 y 11.
-
-1. **Enlace desde la página de inicio** (D-C14). No es una ambigüedad de requisitos: la página de
-   inicio del módulo de registro (`GET /`) no enlaza con `/citas` ni con `/agenda`. Añadir esos
-   dos enlaces es un cambio de dos líneas en el módulo de registro que ninguna parte de esta
-   especificación pide, así que no se ha incluido en el plan. Mientras no se decida, los dos
-   flujos se alcanzan escribiendo su dirección, como documenta [quickstart.md](quickstart.md).
+No es una ambigüedad de requisitos, y por eso no bloquea la fase 2, pero conviene decidirlo antes
+de implementar la interfaz (D-C14): la página de inicio del módulo de registro (`GET /`) no enlaza
+con `/citas` ni con `/agenda`. Añadir esos dos enlaces es un cambio de dos líneas en el módulo de
+registro que ninguna parte de esta especificación pide, así que no se ha incluido en el plan.
+Mientras no se decida, los dos flujos se alcanzan escribiendo su dirección, como documenta
+[quickstart.md](quickstart.md).

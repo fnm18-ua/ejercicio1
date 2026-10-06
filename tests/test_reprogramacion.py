@@ -1,6 +1,8 @@
 """Pruebas de reprogramación de citas (US4).
 
-Verifican RF-C07, RN-C07, RN-C10, CA-C09, CL-C03, CL-C08 y las precisiones PD-C07 y PD-C08.
+Verifican RF-C07, RN-C07, RN-C10, CA-C09, CL-C03, CL-C08, CL-C10 (una cita pasada no se
+reprograma), CL-C13 (un hueco que empieza justo ahora no sirve de destino) y las precisiones
+PD-C07 y PD-C08.
 """
 
 import datetime
@@ -164,6 +166,43 @@ class PruebasReprogramacion(BaseCitasTestCase):
             servicio.reprogramar_cita(
                 self.ruta_bd, otro, cita.id_cita, fecha_futura(), "11:00", MOMENTO_FIJO
             )
+
+    def test_clc10_reprogramar_una_cita_pasada_se_rechaza(self):
+        """CL-C10, PD-C07: una cita cuya hora ya ha pasado no se traslada, aunque se reservara
+        con menos de 24 horas de antelación, y conserva su fecha y su hora."""
+        fecha = fecha_futura()
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "06:00"))
+        with self.assertRaises(servicio.CitaPasada):
+            servicio.reprogramar_cita(
+                self.ruta_bd, self.codigo, cita.id_cita, fecha, "11:00", momento(fecha, "09:30")
+            )
+        listada = servicio.consultar_citas(self.ruta_bd, self.codigo)[0]
+        self.assertEqual(listada.estado, servicio.ESTADO_RESERVADA)
+        self.assertEqual(listada.fecha, fecha)
+        self.assertEqual(listada.hora_inicio, "09:00")
+
+    def test_clc10_el_rechazo_por_cita_pasada_precede_al_de_plazo(self):
+        """CL-C10, PD-C18: el motivo es que la cita ya ha pasado, no el plazo de 24 horas."""
+        fecha = fecha_futura()
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=MOMENTO_FIJO)
+        with self.assertRaises(servicio.CitaPasada):
+            servicio.reprogramar_cita(
+                self.ruta_bd, self.codigo, cita.id_cita, fecha, "11:00", momento(fecha, "09:30")
+            )
+
+    def test_clc13_reprogramar_a_un_hueco_que_empieza_justo_ahora_se_rechaza(self):
+        """CL-C13, PD-C05, PD-C08: el hueco destino debe empezar después del momento actual."""
+        fecha_original = fecha_futura(dias=14)
+        fecha_destino = fecha_futura(dias=7)
+        cita = self.reservar(fecha=fecha_original, hora="09:00", ahora=MOMENTO_FIJO)
+        with self.assertRaises(servicio.HuecoPasado):
+            servicio.reprogramar_cita(
+                self.ruta_bd, self.codigo, cita.id_cita, fecha_destino, "09:00",
+                momento(fecha_destino, "09:00"),
+            )
+        listada = servicio.consultar_citas(self.ruta_bd, self.codigo)[0]
+        self.assertEqual(listada.fecha, fecha_original)
+        self.assertEqual(listada.hora_inicio, "09:00")
 
 
 if __name__ == "__main__":

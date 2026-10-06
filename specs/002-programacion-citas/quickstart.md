@@ -97,6 +97,11 @@ instalación. Usa siempre fechas **futuras** en un día en que el especialista p
 3. Reserva una cita para dentro de unas 3 horas de hoy y cancélala de inmediato. **Comprueba** que
    se acepta (CA-C08).
 4. Intenta cancelar una cita ya cancelada. **Comprueba** que se rechaza (CL-C07).
+5. Reserva una cita para dentro de unos minutos, espera a que pase su hora de inicio e intenta
+   cancelarla y después reprogramarla. **Comprueba** que las dos se rechazan con «No se puede
+   cancelar ni reprogramar una cita cuya hora ya ha pasado.» —no con el mensaje de las 24 horas— y
+   que la cita sigue reservada (CL-C10, PD-C07). La vía fiable son las pruebas automáticas, que
+   fijan el momento actual.
 
 ### E-C02 · Reprogramar · CA-C09, PD-C07
 
@@ -113,7 +118,9 @@ instalación. Usa siempre fechas **futuras** en un día en que el especialista p
 2. En `/agenda`, elige ese especialista y bloquea la franja de 9:00 a 11:00 de esa fecha
    (`fecha_inicio` = `fecha_fin` = esa fecha).
 3. **Comprueba** que las de 9:00 y 10:00 pasan a «cancelada por el centro» y que la de 11:00 sigue
-   reservada (CA-C10).
+   reservada (CA-C10). En la página de confirmación, **comprueba** que se indica que se han
+   cancelado 2 citas, con la fecha y la hora de cada una, y que **no** aparece el código de
+   historia clínica ni ningún otro dato del paciente (PD-C22, CE-C10).
 4. Entra en `/citas/mias` con ese paciente. **Comprueba** que ve las canceladas con el motivo
    «Franja bloqueada del especialista» (CA-C11, RN-C13).
 5. Vuelve a `/citas/huecos` de esa fecha. **Comprueba** que los huecos de 9:00 a 11:00 ya no se
@@ -122,6 +129,14 @@ instalación. Usa siempre fechas **futuras** en un día en que el especialista p
    (CL-C04).
 7. Bloquea una franja con un rango de **varios días** (vacaciones). **Comprueba** que se cancelan
    las citas de todos los días del rango en ese tramo, con un solo bloqueo (E-C04, PD-C12).
+8. Intenta bloquear una franja mal formada: con la fecha de fin anterior a la de inicio y, después,
+   con la hora de fin igual o anterior a la de inicio. **Comprueba** que las dos se rechazan
+   indicando el dato incorrecto (CL-C12, PD-C23).
+9. Intenta bloquear una franja de ayer y, después, una de **hoy** cuyo tramo horario ya haya
+   terminado. **Comprueba** que las dos se rechazan con «No se puede bloquear una franja cuya
+   fecha y hora de fin ya han pasado.» (CL-C12, PD-C23).
+10. Bloquea una franja de **hoy** que ya haya empezado pero cuya hora de fin aún no haya llegado
+    (por ejemplo, de 9:00 a 14:00 si son las 11:00). **Comprueba** que **sí** se acepta (PD-C23).
 
 ### E-C05 · Ajustar la duración · CA-C12, CL-C05
 
@@ -132,6 +147,12 @@ instalación. Usa siempre fechas **futuras** en un día en que el especialista p
 4. Consulta los huecos: **comprueba** que la rejilla es ahora de 8 huecos, de 9:00 a 12:30.
 5. Cambia la duración a 50 minutos. **Comprueba** que se ofrecen 4 huecos (9:00, 9:50, 10:40 y
    11:30) y que el tiempo restante no forma un hueco parcial (CL-C05).
+6. Con un especialista de horario de 9:00 a 13:00 y citas futuras reservadas, intenta cambiar la
+   duración a 300 minutos. **Comprueba** que se rechaza con «Con esa duración no cabe ningún hueco
+   en el horario del especialista.», que la duración no ha cambiado y que ninguna cita se ha
+   cancelado (CL-C11, PD-C21). **Comprueba** también que 240 minutos sí se acepta: cabe un hueco.
+7. En la confirmación de un cambio que cancele citas, **comprueba** que aparecen el número de
+   citas canceladas y la fecha y la hora de cada una, sin ningún dato del paciente (PD-C22).
 
 ### E-C06 · Revisar mis citas · PD-C14
 
@@ -151,6 +172,9 @@ instalación. Usa siempre fechas **futuras** en un día en que el especialista p
 | CL-C06 | Consulta huecos en un día en que el especialista no pasa consulta (p. ej. domingo) | Ningún hueco ofrecido |
 | CL-C08 | Intenta reprogramar una cita ya cancelada | Se rechaza indicando que ya está cancelada |
 | CL-C09 | Identifícate con un código inventado | «No existe ningún paciente con esos datos.», sin crear paciente |
+| CL-C10 | Paso 5 de «E-C03 · Cancelar» | Se rechaza indicando que la cita ya ha pasado |
+| CL-C11 | Paso 6 de «E-C05 · Ajustar la duración» | Se rechaza; ni cambia la duración ni se cancelan citas |
+| CL-C12 | Pasos 8 y 9 de «E-C04 · Bloquear una franja» | Se rechaza; no se registra la franja |
 
 ### CA-C13 · No hay gestión de centros, especialidades ni especialistas
 
@@ -165,7 +189,9 @@ instalación. Usa siempre fechas **futuras** en un día en que el especialista p
 Requiere una cita cuya hora ya haya pasado (o fijar el momento actual en las pruebas
 automáticas, que es la vía fiable):
 
-1. Con una cita pasada en estado reservada, bloquea una franja que la cubra.
+1. Con una cita pasada en estado reservada, bloquea una franja que la cubra y cuya fecha y hora de
+   fin **aún no hayan llegado** (por ejemplo, un rango que empiece el día de la cita y acabe
+   mañana). Una franja entera en el pasado se rechaza y no sirve para esta comprobación (PD-C23).
 2. **Comprueba** que la cita **no** cambia de estado (PD-C11).
 3. Repite cambiando la duración de las consultas del especialista. **Comprueba** el mismo
    resultado.

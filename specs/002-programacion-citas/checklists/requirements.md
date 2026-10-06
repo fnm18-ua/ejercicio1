@@ -43,15 +43,18 @@ planificación.
   citas futuras, porque las pasadas son historial y no agenda.
 - **Trazabilidad verificada**: los 9 RF-C, las 13 RN-C, los 13 CA-C y los 7 CL-C del enunciado
   están recogidos. Las 6 historias de usuario se corresponden con E-C01 a E-C06. Los elementos
-  añadidos llevan identificador propio (PD-C01 a PD-C20, CL-C08, CL-C09, CE-C01 a CE-C09) e
-  indican de qué elemento del enunciado derivan.
+  añadidos llevan identificador propio (PD-C01 a PD-C23, CL-C08 a CL-C13, CE-C01 a CE-C10) e
+  indican de qué elemento del enunciado derivan. En total la especificación recoge 13 casos
+  límite, CL-C01 a CL-C13.
 - **Aritmética comprobada**: el algoritmo de generación de huecos de PD-C03 reproduce CA-C01
   (12 huecos de 9:00 a 12:40 con 20 minutos), CL-C05 (4 huecos con 50 minutos) y CA-C12 (en la
   rejilla de 30 minutos existe el hueco de las 9:00 y no existe el de las 9:20).
 - **Cobertura de las capacidades de la constitución**: las historias P1 y P2 cubren la capacidad
   «reservar una cita»; P3 y P4, «cancelar o reprogramar»; P5 y P6, «gestionar la agenda de un
-  especialista» (principio II, v3.1.0).
-- **Pendiente de gobernanza**: el principio I de la constitución no incluye todavía el
-  vocabulario del dominio de citas (cita, especialista, agenda). Señalado en «Supuestos».
+  especialista» (principio II, v3.2.0).
+- **Gobernanza**: el pendiente de vocabulario está cerrado. El principio I de la constitución
+  (v3.2.0) ya incluye el vocabulario del dominio de citas (cita, especialista, especialidad,
+  centro, agenda, hueco y franja bloqueada), y el supuesto que lo señalaba se ha retirado de la
+  especificación.
 - Los elementos marcados como incompletos requieren actualizar la especificación antes de
   `/speckit-clarify` o `/speckit-plan`.

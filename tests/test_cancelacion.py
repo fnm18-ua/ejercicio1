@@ -1,8 +1,8 @@
 """Pruebas de cancelación de citas por el paciente (US3).
 
-Verifican RF-C06, RN-C09, RN-C13, CA-C06, CA-C07, CA-C08 y CL-C07. Todas fijan el momento actual
-y el momento de reserva de forma explícita (D-C10), porque el plazo de las 24 horas depende de
-ambos.
+Verifican RF-C06, RN-C09, RN-C13, CA-C06, CA-C07, CA-C08, CL-C07 y CL-C10 (una cita pasada no se
+cancela, PD-C07). Todas fijan el momento actual y el momento de reserva de forma explícita
+(D-C10), porque el plazo de las 24 horas depende de ambos.
 """
 
 import datetime
@@ -88,6 +88,46 @@ class PruebasCancelacion(BaseCitasTestCase):
         nueva = self.reservar(fecha=fecha, hora="09:00", codigo=otro)
         self.assertEqual(nueva.hora_inicio, "09:00")
         self.assertNotEqual(nueva.id_cita, cita.id_cita)
+
+    def test_clc10_cancelar_una_cita_pasada_reservada_con_menos_de_24_horas_se_rechaza(self):
+        """CL-C10, PD-C07: la excepción de las reservas con menos de 24 horas no alcanza a una
+        cita cuya hora de inicio ya ha pasado."""
+        fecha = fecha_futura()
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "06:00"))
+        with self.assertRaises(servicio.CitaPasada):
+            servicio.cancelar_cita(
+                self.ruta_bd, self.codigo, cita.id_cita, momento(fecha, "09:30")
+            )
+        self.assertEqual(self.estado_de(cita.id_cita), servicio.ESTADO_RESERVADA)
+
+    def test_clc10_cancelar_una_cita_pasada_reservada_con_antelacion_indica_que_ha_pasado(self):
+        """CL-C10, PD-C18: el motivo del rechazo es que la cita ya ha pasado, no el plazo."""
+        fecha = fecha_futura()
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=MOMENTO_FIJO)
+        with self.assertRaises(servicio.CitaPasada):
+            servicio.cancelar_cita(
+                self.ruta_bd, self.codigo, cita.id_cita, momento(fecha, "09:30")
+            )
+        self.assertEqual(self.estado_de(cita.id_cita), servicio.ESTADO_RESERVADA)
+
+    def test_pdc07_cancelar_justo_a_la_hora_de_inicio_se_rechaza(self):
+        """PD-C07: una cita está pasada cuando su inicio no es posterior al momento actual."""
+        fecha = fecha_futura()
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "06:00"))
+        with self.assertRaises(servicio.CitaPasada):
+            servicio.cancelar_cita(
+                self.ruta_bd, self.codigo, cita.id_cita, momento(fecha, "09:00")
+            )
+        self.assertEqual(self.estado_de(cita.id_cita), servicio.ESTADO_RESERVADA)
+
+    def test_pdc07_cancelar_un_minuto_antes_del_inicio_se_permite(self):
+        """PD-C07, RN-C09: reservada con menos de 24 horas, se puede cancelar hasta su inicio."""
+        fecha = fecha_futura()
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "06:00"))
+        cancelada = servicio.cancelar_cita(
+            self.ruta_bd, self.codigo, cita.id_cita, momento(fecha, "08:59")
+        )
+        self.assertEqual(cancelada.estado, servicio.ESTADO_CANCELADA_PACIENTE)
 
 
 if __name__ == "__main__":

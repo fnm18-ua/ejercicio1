@@ -1,7 +1,8 @@
 """Pruebas de reserva de citas y del listado del paciente (US1 y US2).
 
-Verifican RF-C01 a RF-C05, CA-C01 a CA-C05, CA-C11, CL-C01, CL-C02, CL-C03, CL-C06, CL-C09 y las
-precisiones PD-C01, PD-C06 y PD-C14.
+Verifican RF-C01 a RF-C05, CA-C01 a CA-C05, CA-C11, CL-C01, CL-C02, CL-C03, CL-C06, CL-C09, CL-C13
+(un hueco que empieza justo ahora no se reserva) y las precisiones PD-C01, PD-C05, PD-C06 y
+PD-C14.
 """
 
 import unittest
@@ -129,6 +130,30 @@ class PruebasReserva(BaseCitasTestCase):
         fecha = fecha_futura()
         cita = self.reservar(fecha=fecha, hora="12:40", ahora=momento(fecha, "09:05"))
         self.assertEqual(cita.estado, servicio.ESTADO_RESERVADA)
+
+    def test_clc13_hueco_que_empieza_justo_ahora_no_se_ofrece(self):
+        """CL-C13, PD-C05: un hueco solo es reservable si su inicio es estrictamente posterior
+        al momento actual."""
+        fecha = fecha_futura()
+        horas = self.horas_libres(fecha=fecha, ahora=momento(fecha, "09:00"))
+        self.assertNotIn("09:00", horas)
+        self.assertEqual(horas[0], "09:20")
+
+    def test_clc13_reservar_un_hueco_que_empieza_justo_ahora_se_rechaza(self):
+        """CL-C13, PD-C05: ninguna cita nace ya pasada y sin poder cancelarse."""
+        fecha = fecha_futura()
+        with self.assertRaises(servicio.HuecoPasado):
+            self.reservar(fecha=fecha, hora="09:00", ahora=momento(fecha, "09:00"))
+        self.assertEqual(servicio.consultar_citas(self.ruta_bd, self.codigo), [])
+
+    def test_pdc05_hueco_que_empieza_un_minuto_despues_se_reserva_y_se_puede_cancelar(self):
+        """PD-C05, PD-C07: toda cita recién reservada es futura y se puede cancelar."""
+        fecha = fecha_futura()
+        ahora = momento(fecha, "08:59")
+        cita = self.reservar(fecha=fecha, hora="09:00", ahora=ahora)
+        self.assertEqual(cita.estado, servicio.ESTADO_RESERVADA)
+        cancelada = servicio.cancelar_cita(self.ruta_bd, self.codigo, cita.id_cita, ahora)
+        self.assertEqual(cancelada.estado, servicio.ESTADO_CANCELADA_PACIENTE)
 
     def test_clc03_segunda_reserva_del_mismo_hueco_se_rechaza(self):
         """CL-C03: si otra persona acaba de ocupar el hueco, la segunda reserva se rechaza."""

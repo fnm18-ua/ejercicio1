@@ -109,6 +109,7 @@ Campo: `codigo`.
 |---|---|---|
 | Cancelada | `303` | Redirección a la ruta 5 con `aviso=cancelada` (CA-C06, CA-C08) |
 | Fuera de plazo | `409` | «Solo se puede cancelar o reprogramar hasta 24 horas antes del inicio de la cita.» (CA-C07) |
+| Cita pasada | `409` | «No se puede cancelar ni reprogramar una cita cuya hora ya ha pasado.» (CL-C10, PD-C07) |
 | Ya cancelada | `409` | «Esa cita ya está cancelada.» (CL-C07) |
 | No es del paciente o no existe | `404` | Página de cita no encontrada |
 
@@ -118,8 +119,8 @@ Parámetros: `codigo`, opcionalmente `fecha`. Muestra los huecos libres **del mi
 (RN-C10) para la fecha elegida, cada uno con un botón que envía a la ruta 8. No permite cambiar de
 especialista.
 
-Si la cita está fuera de plazo o ya cancelada, responde `409` con el mensaje correspondiente, sin
-mostrar huecos (CA-C07, CL-C08).
+Si la cita está fuera de plazo, ya cancelada o ya pasada, responde `409` con el mensaje
+correspondiente, sin mostrar huecos (CA-C07, CL-C08, CL-C10).
 
 ## 8 · `POST /citas/<id_cita>/reprogramar`
 
@@ -129,7 +130,7 @@ Campos: `codigo`, `fecha`, `hora_inicio`.
 |---|---|---|
 | Reprogramada | `303` | Redirección a la ruta 5 con `aviso=reprogramada`; el identificador de la cita no cambia (CA-C09) |
 | Hueco no disponible, pasado o solapado | `409` | El mensaje correspondiente (CL-C03, RN-C07, RN-C08) |
-| Fuera de plazo o ya cancelada | `409` | El mensaje correspondiente (CA-C07, CL-C08) |
+| Fuera de plazo, ya cancelada o ya pasada | `409` | El mensaje correspondiente (CA-C07, CL-C08, CL-C10) |
 
 ## 9 · `GET /agenda`
 
@@ -148,26 +149,34 @@ No hay ningún formulario de alta o edición de especialistas, centros o especia
 
 | Caso | Estado | Contenido |
 |---|---|---|
-| Aplicado | `200` | Confirmación con el número de citas canceladas por el centro y su listado (CA-C10, CA-C11) |
+| Aplicado | `200` | Confirmación con el número de citas canceladas por el centro y, de cada una, la fecha, la hora y el motivo de cancelación (CA-C10, PD-C22) |
 | Aplicado sin citas dentro | `200` | Confirmación indicando que no se canceló ninguna cita (CL-C04) |
-| Rango u horas inválidas | `400` | Mensaje del dato inválido (PD-C18) |
+| Rango u horas inválidas | `400` | Mensaje del dato inválido (PD-C18, PD-C23, CL-C12) |
+| Franja entera en el pasado | `400` | «No se puede bloquear una franja cuya fecha y hora de fin ya han pasado.» (PD-C23, CL-C12) |
 
 Las citas pasadas no se cancelan y se indica en la confirmación (PD-C11).
+
+**Contenido de la confirmación** (PD-C22, CE-C10, D-C19): de cada cita cancelada se muestran la
+fecha, la hora y el motivo de cancelación, con la forma «{fecha} a las {hora} · motivo: {motivo}».
+El motivo se conserva porque no identifica al paciente y confirma al administrativo por qué se
+canceló cada cita. La página **no** contiene el código de historia clínica, el documento de
+identidad ni ningún otro dato de los pacientes afectados. Lo mismo aplica a la ruta 11.
 
 ## 11 · `POST /agenda/duracion`
 
 | Caso | Estado | Contenido |
 |---|---|---|
-| Aplicado | `200` | Confirmación con la nueva rejilla y el listado de citas canceladas por el centro (CA-C12) |
-| Duración no positiva o no numérica | `400` | Mensaje del dato inválido (PD-C18) |
+| Aplicado | `200` | Confirmación con la nueva rejilla, el número de citas canceladas por el centro y la fecha y la hora de cada una, sin datos de los pacientes (CA-C12, PD-C22) |
+| Duración no positiva o no numérica | `400` | Mensaje del dato inválido (PD-C18, PD-C21) |
+| Duración con la que no cabe ningún hueco | `400` | «Con esa duración no cabe ningún hueco en el horario del especialista.»; la duración no cambia y no se cancela ninguna cita (PD-C21, CL-C11) |
 
 ## Respuestas de error comunes
 
 | Estado | Cuándo |
 |---|---|
 | `303` | Operación correcta que redirige, para no repetir el envío del formulario |
-| `400` | Dato ausente o mal formado; paciente no identificado (CL-C09) |
+| `400` | Dato ausente o mal formado; paciente no identificado (CL-C09); duración sin hueco posible (CL-C11); franja mal formada o entera en el pasado (CL-C12) |
 | `404` | Ruta inexistente, o cita que no existe o no es del paciente (CA-C13) |
-| `409` | Regla de negocio incumplida: hueco no disponible o pasado, solapamiento, fuera de plazo, cita ya cancelada |
+| `409` | Regla de negocio incumplida: hueco no disponible o pasado, solapamiento, fuera de plazo, cita ya pasada (CL-C10), cita ya cancelada |
 
 Ningún error se presenta como fallo genérico: todos indican el motivo concreto (PD-C18).

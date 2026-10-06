@@ -5,8 +5,7 @@ se trabaja sobre `master`)
 
 **Creada**: 2026-09-28
 
-**Estado**: Implementada en su versión del 2026-09-28; actualizada el 2026-10-06 con cambios
-pendientes de implementar (ver «Aclaraciones»)
+**Estado**: Borrador — sin ambigüedades pendientes (ver «Aclaraciones»)
 
 **Entrada**: Descripción del usuario: «MÓDULO DE PROGRAMACIÓN DE CITAS» (enunciado completo con
 objetivo y contexto de negocio, usuarios, escenarios E-C01 a E-C06, requisitos RF-C01 a RF-C09,
@@ -22,7 +21,7 @@ fuera de alcance).
 
 > **Encaje en la constitución**: este módulo es el segundo de los dos que cubre el proyecto y
 > aporta las capacidades 4, 5 y 6 del principio II (reservar una cita; cancelar o reprogramar;
-> gestionar la agenda de un especialista), en su versión 3.2.0.
+> gestionar la agenda de un especialista), en su versión 3.1.0.
 
 ## Objetivo y contexto de negocio
 
@@ -65,28 +64,6 @@ para cada perfil (PD-C02).
 - Q: ¿El bloqueo de una franja (RN-C11) y el cambio de duración (RN-C12) cancelan también las
   citas cuya hora ya ha pasado? → A: No; solo alcanzan a las citas futuras, para no reescribir
   el historial del paciente (PD-C11).
-
-### Sesión 2026-10-06
-
-- Q: ¿Puede el paciente cancelar o reprogramar una cita cuya hora de inicio ya ha pasado? → A: No;
-  se rechaza con un motivo propio, «la cita ya ha pasado», distinto del de las 24 horas (PD-C07,
-  PD-C18, CL-C10).
-- Q: ¿Qué valores se aceptan como nueva duración de las consultas cuando ni un solo hueco de esa
-  duración cabe en el horario del especialista? → A: Solo un número entero de minutos mayor que
-  cero que permita al menos un hueco en el horario; si no cabe ninguno, se rechaza con su motivo
-  y no se cancela ninguna cita (PD-C21, PD-C18, CL-C11).
-- Q: Tras bloquear una franja o cambiar la duración de las consultas, ¿qué información de las
-  citas canceladas debe ver el administrativo en la confirmación? → A: El número de citas
-  canceladas y, de cada una, la fecha, la hora y el motivo de cancelación, sin ningún dato que
-  identifique al paciente. La respuesta inicial no incluía el motivo; la persona responsable
-  decidió conservarlo ese mismo día, porque no identifica al paciente y confirma al
-  administrativo por qué se canceló cada cita (PD-C22, CE-C10).
-- Q: ¿Qué franjas debe rechazar el sistema cuando el administrativo intenta bloquearlas? → A: Las
-  mal formadas (fecha de fin anterior a la de inicio, u hora de fin no posterior a la de inicio)
-  y las que están enteras en el pasado; las demás se aceptan aunque no tengan efecto. La persona
-  responsable precisó ese mismo día que «entera en el pasado» significa que la fecha y la hora de
-  fin ya han pasado, no solo la fecha: un bloqueo de hoy cuyo tramo horario ya ha terminado
-  también se rechaza (PD-C23, PD-C18, CL-C12).
 
 ## Escenarios de usuario y pruebas *(obligatorio)*
 
@@ -169,9 +146,6 @@ estado resultante, la liberación del hueco y el rechazo de los casos no permiti
    **Then** la cancelación se acepta (CA-C08, RN-C09).
 4. **Given** una cita ya cancelada, **When** el paciente intenta cancelarla otra vez, **Then** se
    rechaza e informa (CL-C07).
-5. **Given** una cita reservada cuya hora de inicio ya ha pasado y que se reservó con menos de 24
-   horas de antelación, **When** el paciente intenta cancelarla, **Then** se rechaza e informa de
-   que la cita ya ha pasado, y sigue en estado reservada (CL-C10, RN-C09, PD-C07).
 
 ---
 
@@ -200,9 +174,6 @@ queda ocupado.
 4. **Given** una cita reservada, **When** el paciente intenta reprogramarla a un hueco que se
    solapa con otra cita reservada suya, **Then** se rechaza e informa del motivo (RN-C07,
    PD-C08).
-5. **Given** una cita reservada cuya hora de inicio ya ha pasado, **When** el paciente intenta
-   reprogramarla, **Then** se rechaza e informa de que la cita ya ha pasado, y conserva su fecha
-   y su hora (CL-C10, RN-C09, PD-C07).
 
 ---
 
@@ -232,30 +203,12 @@ qué citas cambian de estado y qué huecos dejan de ofrecerse.
    alcanza, **Then** se cancela igualmente: la regla de las 24 horas no limita al centro
    (RN-C11).
 4. **Given** una cita del mismo especialista cuya hora ya ha pasado, **When** el administrativo
-   bloquea una franja que la cubre y cuya fecha y hora de fin aún no han llegado, **Then** esa
-   cita NO cambia de estado y sigue reservada (PD-C11, PD-C23).
+   bloquea una franja que la cubre, **Then** esa cita NO cambia de estado y sigue reservada
+   (PD-C11).
 5. **Given** una franja sin ninguna cita futura dentro, **When** el administrativo la bloquea,
    **Then** el bloqueo se aplica sin cancelar ninguna cita (CL-C04).
 6. **Given** una franja bloqueada, **When** un paciente consulta los huecos de una fecha del
    rango, **Then** los huecos que cubre el tramo horario no se ofrecen como libres (RN-C04).
-7. **Given** un bloqueo que cancela dos citas futuras, **When** el administrativo recibe la
-   confirmación, **Then** ve que se han cancelado 2 citas y, de cada una, la fecha, la hora y el
-   motivo de cancelación, y no ve el código de historia clínica ni ningún otro dato de los
-   pacientes (PD-C22).
-8. **Given** un especialista cualquiera, **When** el administrativo intenta bloquear una franja
-   cuya fecha de fin es anterior a la fecha actual, **Then** el bloqueo se rechaza e informa de
-   que el rango ya ha pasado, y no se registra ninguna franja (CL-C12, PD-C23).
-9. **Given** un especialista cualquiera, **When** el administrativo intenta bloquear una franja
-   con la fecha de fin anterior a la de inicio, o con la hora de fin no posterior a la de inicio,
-   **Then** el bloqueo se rechaza e informa del dato incorrecto, y no se registra ninguna franja
-   ni se cancela ninguna cita (CL-C12, PD-C23).
-10. **Given** un especialista cualquiera, **When** el administrativo intenta bloquear una franja
-    de hoy cuyo tramo horario ya ha terminado (de 9:00 a 11:00 cuando son las 15:00), **Then** el
-    bloqueo se rechaza e informa de que la fecha y la hora de fin ya han pasado, y no se registra
-    ninguna franja (CL-C12, PD-C23).
-11. **Given** un especialista cualquiera, **When** el administrativo bloquea una franja de hoy de
-    9:00 a 14:00 cuando son las 11:00, **Then** el bloqueo se acepta, porque su hora de fin aún
-    no ha llegado (CL-C12, PD-C23).
 
 ---
 
@@ -284,13 +237,6 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
 4. **Given** una cita pasada a las 9:20 que no encaja en la nueva rejilla, **When** el
    administrativo cambia la duración, **Then** esa cita NO cambia de estado: el recálculo solo
    alcanza a las citas futuras (PD-C11).
-5. **Given** un especialista con horario de 9:00 a 13:00, consultas de 20 minutos y citas futuras
-   reservadas, **When** el administrativo intenta pasar la duración a 300 minutos, **Then** el
-   cambio se rechaza e informa de que no cabe ningún hueco en el horario, la duración sigue
-   siendo de 20 minutos y ninguna cita cambia de estado (CL-C11, PD-C21).
-6. **Given** un cambio de duración que cancela una cita futura, **When** el administrativo recibe
-   la confirmación, **Then** ve que se ha cancelado 1 cita y su fecha, su hora y su motivo de
-   cancelación, y no ve el código de historia clínica ni ningún otro dato del paciente (PD-C22).
 
 ---
 
@@ -311,24 +257,6 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   rechaza e informa. Una cita cancelada no vuelve al estado reservada.
 - **CL-C09** *(deriva de RF-C01)*: identificarse con un código o un documento que no corresponde
   a ningún paciente: se informa de que no existe el paciente, sin crear ninguno y sin error.
-- **CL-C10** *(deriva de RN-C09; aclaración Q1 de la sesión 2026-10-06)*: intentar cancelar o
-  reprogramar una cita reservada cuya hora de inicio ya ha pasado: se rechaza e informa de que la
-  cita ya ha pasado, aunque se hubiera reservado con menos de 24 horas de antelación (PD-C07).
-- **CL-C11** *(deriva de RF-C09 y RN-C03; aclaración Q2 de la sesión 2026-10-06)*: intentar
-  ajustar la duración de las consultas a un valor que no es un número entero de minutos mayor
-  que cero, o con el que no cabe ningún hueco en el horario del especialista: se rechaza e
-  informa del motivo, sin cambiar la duración y sin cancelar ninguna cita (PD-C21).
-- **CL-C12** *(deriva de RF-C08 y PD-C12; aclaración Q4 de la sesión 2026-10-06)*: intentar
-  bloquear una franja mal formada (fecha de fin anterior a la de inicio, u hora de fin no
-  posterior a la de inicio) o entera en el pasado (su fecha y hora de fin ya han pasado, lo que
-  incluye un bloqueo de hoy cuyo tramo horario ya ha terminado): se rechaza e informa del motivo,
-  sin registrar la franja y sin cancelar ninguna cita. Un bloqueo de hoy cuya hora de fin aún no
-  ha llegado se acepta (PD-C23).
-- **CL-C13** *(deriva de RN-C08 y PD-C05; decisión de la persona responsable del 2026-10-06 sobre
-  el hallazgo A1 de `/speckit-analyze`)*: un hueco cuya hora de inicio coincide exactamente con
-  el momento actual: no se ofrece entre los libres y, si se intenta reservar o usar como destino
-  de una reprogramación (PD-C08), se rechaza e informa de que el hueco ya ha pasado. Ninguna cita
-  nace ya pasada y sin poder cancelarse (PD-C07).
 
 ## Requisitos *(obligatorio)*
 
@@ -399,28 +327,17 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   supere la hora de fin del horario. El tiempo sobrante no forma un hueco parcial.
 - **PD-C04** *(deriva de RN-C04 y RN-C06)*: Un hueco solo lo ocupan las citas en estado
   reservada. Cancelar una cita —por el paciente o por el centro— libera su hueco de inmediato.
-- **PD-C05** *(deriva de RN-C08; decisión de la persona responsable del 2026-10-06 sobre el
-  hallazgo A1 de `/speckit-analyze`)*: «Un hueco cuya hora ya ha pasado» se evalúa comparando la
-  fecha y la hora de inicio del hueco con la fecha y la hora actuales del sistema. **Un hueco
-  solo es reservable si su hora de inicio es estrictamente posterior al momento actual**: un
-  hueco cuyo inicio coincide con el momento actual se considera ya pasado (CL-C13). Los huecos ya
-  pasados no se ofrecen entre los libres ni pueden reservarse. Así ninguna cita nace ya pasada y
-  sin poder cancelarse (PD-C07).
+- **PD-C05** *(deriva de RN-C08)*: «Un hueco cuya hora ya ha pasado» se evalúa comparando la
+  fecha y la hora de inicio del hueco con la fecha y la hora actuales del sistema. Los huecos ya
+  pasados no se ofrecen entre los libres ni pueden reservarse.
 - **PD-C06** *(deriva de RN-C07)*: Dos citas se solapan cuando sus intervalos
   [inicio, inicio + duración) se intersecan. Dos citas consecutivas que se tocan en el extremo
   (una acaba a las 9:20 y la otra empieza a las 9:20) NO se solapan. Solo se tienen en cuenta
   las citas en estado reservada del mismo paciente.
-- **PD-C07** *(deriva de RN-C09; aclaración Q2 de la sesión 2026-09-28 y aclaración Q1 de la
-  sesión 2026-10-06)*: El límite de RN-C09 se evalúa comparando el momento actual con el inicio
-  de la cita. **Una cita cuya hora de inicio ya ha pasado no se puede cancelar ni reprogramar en
-  ningún caso** («hasta su inicio», RN-C09). Una cita está pasada cuando su hora de inicio no es
-  estrictamente posterior al momento actual, es decir, también cuando coincide con él: es el
-  mismo criterio con el que PD-C05 decide si un hueco es reservable y PD-C11 si una cita es
-  futura, de modo que toda cita recién reservada es futura y se puede cancelar; el rechazo
-  indica que la cita ya ha pasado, no que está fuera del plazo de 24 horas (PD-C18). Para una
-  cita futura: si faltan 24 horas o más, se permite cancelar y reprogramar; si falta menos, solo
-  se permite cuando la cita se reservó a menos de 24 horas de su inicio. **Reprogramar actualiza
-  ese momento de referencia**: tras un
+- **PD-C07** *(deriva de RN-C09; aclaración Q2 de la sesión 2026-09-28)*: El límite de RN-C09 se
+  evalúa comparando el momento actual con el inicio de la cita: si faltan 24 horas o más, se
+  permite cancelar y reprogramar; si falta menos, solo se permite cuando la cita se reservó a
+  menos de 24 horas de su inicio. **Reprogramar actualiza ese momento de referencia**: tras un
   traslado, la antelación se mide desde el instante de la reprogramación, no desde la reserva
   original. Así, una cita reservada hace un mes y reprogramada hoy a un hueco de dentro de 3
   horas puede después cancelarse, porque su reserva efectiva es de hace minutos.
@@ -471,11 +388,10 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   reserva se resuelven de forma que dos intentos simultáneos sobre el mismo hueco no puedan
   confirmarse los dos: el segundo se rechaza informando de que ya no está disponible. La misma
   garantía aplica al hueco destino de una reprogramación.
-- **PD-C18** *(deriva de CA-C05, CA-C07, CL-C01 a CL-C04, CL-C07 y CL-C10 a CL-C13)*: Toda
-  operación rechazada indica el motivo concreto: hueco no disponible, hueco pasado, solapamiento
-  con otra cita del paciente, fuera del plazo de 24 horas, cita ya pasada, cita ya cancelada,
-  paciente no encontrado, duración de consulta no válida o franja no válida (mal formada o
-  entera en el pasado). Ningún rechazo se presenta como error genérico.
+- **PD-C18** *(deriva de CA-C05, CA-C07, CL-C01 a CL-C04 y CL-C07)*: Toda operación rechazada
+  indica el motivo concreto: hueco no disponible, hueco pasado, solapamiento con otra cita del
+  paciente, fuera del plazo de 24 horas, cita ya cancelada o paciente no encontrado. Ningún
+  rechazo se presenta como error genérico.
 - **PD-C19** *(deriva de RN-C01 y CA-C13)*: Los centros, las especialidades y los especialistas
   se cargan como datos iniciales de la aplicación. No existe ninguna pantalla ni operación de
   alta, edición o borrado de esas tres entidades, ni del horario de un especialista más allá de
@@ -484,37 +400,6 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   citas encajan en la nueva rejilla; no vuelve a comprobar RN-C07. Si al alargarse las consultas
   dos citas de un mismo paciente pasaran a solaparse, ambas se conservan. Se documenta como
   limitación conocida en «Supuestos» para no ampliar el alcance por iniciativa propia.
-- **PD-C21** *(deriva de RF-C09, RN-C02 y RN-C03; aclaración Q2 de la sesión 2026-10-06)*: La
-  nueva duración de consulta DEBE ser un número entero de minutos mayor que cero y DEBE permitir
-  al menos un hueco en el horario del especialista, es decir, no superar el tiempo entre su hora
-  de inicio y su hora de fin (PD-C03). Un valor que no lo cumple se rechaza indicando el motivo
-  (PD-C18): la duración vigente no cambia, la rejilla no se recalcula y ninguna cita se cancela.
-  Así un error al teclear no deja al especialista sin huecos ni cancela todas sus citas futuras,
-  efecto que no podría deshacerse (CL-C08).
-- **PD-C22** *(deriva de RF-C08, RF-C09, RN-C11, RN-C12 y PD-C02; aclaración Q3 de la sesión
-  2026-10-06, con la decisión de ese mismo día de conservar el motivo)*: Al bloquear una franja o ajustar la duración, el sistema confirma la operación al
-  administrativo indicando el número de citas canceladas por el centro y, de cada una, la fecha,
-  la hora y el motivo de cancelación (PD-C09); si no se cancela ninguna, lo indica (CL-C04). El
-  motivo no identifica al paciente y confirma al administrativo por qué se canceló cada cita. La
-  confirmación NO muestra el código de
-  historia clínica, el documento de identidad ni ningún otro dato que identifique a los
-  pacientes afectados: el administrativo no tiene ninguna operación que hacer con esa identidad
-  —no hay notificaciones ni reasignación de citas— y, sin control de acceso, el código de
-  historia clínica basta para ver y operar con las citas de un paciente (PD-C02). Es la
-  aplicación del principio de minimización de datos (RGPD, art. 5.1.c).
-- **PD-C23** *(deriva de RF-C08 y PD-C12; aclaración Q4 de la sesión 2026-10-06)*: El sistema
-  rechaza el bloqueo de una franja, indicando el motivo (PD-C18) y sin registrarla ni cancelar
-  ninguna cita, en estos tres casos y solo en ellos: (a) la fecha de fin es anterior a la fecha
-  de inicio; (b) la hora de fin no es posterior a la hora de inicio; (c) la franja está entera
-  en el pasado, es decir, el momento que forman su fecha de fin y su hora de fin no es posterior
-  al momento actual del sistema, con el mismo criterio de PD-C05 y PD-C11. Por (c) se rechaza
-  tanto una franja cuya fecha de fin es anterior a la fecha actual como una que acaba hoy y cuyo
-  tramo horario ya ha terminado; en cambio, un bloqueo de hoy de 9:00 a 14:00 solicitado a las
-  11:00 se acepta, porque su hora de fin aún no ha llegado. Cualquier otra franja se acepta,
-  aunque no tenga efecto: una que empieza en el pasado y cuya fecha y hora de fin aún no han
-  llegado, un tramo horario fuera del horario del especialista o un rango sin ningún día en que
-  pase consulta. Como un bloqueo no se puede deshacer (PD-C13), rechazar la franja ya pasada
-  evita registrar franjas que nunca podrían afectar a la agenda.
 
 ### Entidades clave
 
@@ -524,8 +409,7 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   precargado. Atributos: nombre.
 - **Especialista**: profesional que atiende las citas. Dato precargado. Atributos: nombre,
   centro al que pertenece, especialidad, horario de consulta y duración de consulta en minutos.
-  La duración es el único atributo que la aplicación permite cambiar (RF-C09); es un número
-  entero de minutos mayor que cero con el que cabe al menos un hueco en el horario (PD-C21).
+  La duración es el único atributo que la aplicación permite cambiar (RF-C09).
 - **Horario de consulta**: días de la semana en que el especialista pasa consulta y hora de
   inicio y de fin dentro de esos días.
 - **Hueco**: tramo de tiempo de un especialista en una fecha, calculado a partir de su horario y
@@ -542,9 +426,7 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   con los tres valores de PD-C09.
 - **Franja bloqueada**: periodo en que un especialista no atiende (vacaciones, baja, formación).
   Atributos: especialista, fecha de inicio, fecha de fin, hora de inicio y hora de fin; el tramo
-  horario se aplica a cada día del rango, ambas fechas incluidas (PD-C12). La fecha de fin no es
-  anterior a la de inicio, la hora de fin es posterior a la de inicio y, en el momento de
-  bloquear, la fecha y la hora de fin aún no han pasado (PD-C23). Mientras esté vigente,
+  horario se aplica a cada día del rango, ambas fechas incluidas (PD-C12). Mientras esté vigente,
   los huecos que cubre no están libres (RN-C04). No se puede desbloquear (PD-C13).
 - **Paciente**: entidad del módulo de registro, referenciada aquí por su código de historia
   clínica (RN-C05). Este módulo no la crea, la modifica ni la borra.
@@ -561,12 +443,8 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
   la duración de las consultas, quedan 0 citas **futuras** reservadas que el especialista no
   pueda atender (ninguna dentro de una franja bloqueada, ninguna fuera de la rejilla vigente).
   Las citas ya pasadas se conservan tal como estaban: son historial, no agenda.
-- **CE-C03** *(RN-C07, PD-C20; decisión de la persona responsable del 2026-10-06 sobre el
-  hallazgo I2 de `/speckit-analyze`)*: Ninguna reserva ni reprogramación aceptada deja a un
-  paciente con dos citas reservadas que se solapen en el tiempo (0 solapamientos creados por esas
-  dos operaciones), con independencia del especialista. **Excepción declarada**: el recálculo por
-  cambio de duración puede dejar dos citas de un mismo paciente solapadas, y ambas se conservan
-  (PD-C20). Es una limitación conocida que no se resuelve, y queda fuera de este criterio.
+- **CE-C03** *(RN-C07)*: En ningún momento un paciente tiene dos citas reservadas que se solapen
+  en el tiempo (0 solapamientos), con independencia del especialista.
 - **CE-C04** *(RF-C01, CA-C04)*: El 100 % de los pacientes registrados accede a sus citas tanto
   por su código de historia clínica como por su documento de identidad, obteniendo el mismo
   listado por las dos vías.
@@ -578,13 +456,9 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
 - **CE-C07** *(PD-C18)*: El 100 % de las operaciones rechazadas indica el motivo concreto del
   rechazo.
 - **CE-C08** *(sección 6 y 7 del enunciado)*: Se superan los 13 criterios de aceptación CA-C01 a
-  CA-C13 y los 13 casos límite CL-C01 a CL-C13.
+  CA-C13 y los 9 casos límite CL-C01 a CL-C09.
 - **CE-C09** *(RN-C01, CA-C13)*: La aplicación no ofrece ninguna vía para crear, editar o borrar
   centros, especialidades ni especialistas (0 pantallas y 0 operaciones de ese tipo).
-- **CE-C10** *(PD-C22, PD-C02)*: El 100 % de las confirmaciones de bloqueo de franja y de cambio
-  de duración indica el número de citas canceladas y, de cada una, la fecha, la hora y el motivo
-  de cancelación, y muestra 0 datos que identifiquen a un paciente (ni código de historia clínica
-  ni documento de identidad).
 
 ## Supuestos
 
@@ -594,6 +468,11 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
 - **Dependencia del módulo de registro**: este módulo presupone pacientes ya registrados y
   reutiliza su código de historia clínica como referencia (RN-C05). No crea ni modifica
   pacientes; si el paciente no existe, se informa y no se le da de alta (CL-C09).
+- **Vocabulario pendiente en la constitución**: el principio I de la constitución (v3.1.0) fija
+  un vocabulario cerrado de cuatro términos —paciente, historia clínica, mutua y documento de
+  identidad— que no cubre el dominio de citas. Esta especificación usa de forma consistente
+  *cita*, *especialista*, *agenda*, *hueco* y *franja bloqueada*, y queda pendiente la enmienda
+  del principio I que los incorpore. Se señala en vez de darlo por hecho (principio III).
 - **Sin objetivos de rendimiento**: el enunciado no fija tiempos de respuesta ni volúmenes; no
   se definen métricas de rendimiento para no inventar datos.
 - **Reloj del sistema**: las reglas temporales (RN-C08, RN-C09) se evalúan con la fecha y hora
@@ -604,11 +483,9 @@ que encajan y en horas que no, y comprobando la nueva rejilla y el estado de cad
 - **Motivo de cancelación predefinido**: el sistema genera el motivo a partir de la causa
   (PD-C09); el administrativo no escribe texto libre, porque el enunciado no lo pide.
 - **Sin desbloqueo de franjas**: solo se bloquea (RF-C08, PD-C13).
-- **Bloqueos sobre fechas pasadas**: se rechaza la franja que está entera en el pasado, es decir,
-  aquella cuya fecha y hora de fin ya han pasado, lo que incluye un bloqueo de hoy cuyo tramo
-  horario ya ha terminado (PD-C23, aclaración Q4 de la sesión 2026-10-06). Una franja que empieza
-  en el pasado y cuya fecha y hora de fin aún no han llegado sí se acepta, y su parte ya pasada
-  no tiene ningún efecto sobre las citas ya celebradas (PD-C11).
+- **Bloqueos sobre fechas pasadas**: no se prohíben, pero no tienen ningún efecto sobre las citas
+  ya celebradas (PD-C11). El enunciado no pide validar que el rango sea futuro y no se añade esa
+  restricción.
 - **Limitación conocida del recálculo**: un cambio de duración puede dejar dos citas de un mismo
   paciente solapadas sin que el sistema lo impida (PD-C20). El enunciado no regula este caso y
   no se amplía el alcance para resolverlo.

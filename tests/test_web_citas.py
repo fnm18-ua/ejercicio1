@@ -14,6 +14,7 @@ from tests.utilidades_citas import (
     ESPECIALIDAD,
     ServidorCitasTestCase,
     fecha_futura,
+    fecha_pasada,
 )
 
 
@@ -148,6 +149,15 @@ class PruebasWebCitas(ServidorCitasTestCase):
         estado, _, _ = self.peticion_post("/citas/9999/cancelar", {"codigo": self.codigo})
         self.assertEqual(estado, 404)
 
+    def test_ruta6_cancelar_cita_pasada_responde_409(self):
+        """CL-C10: una cita cuya hora ya ha pasado no se cancela, y se dice por qué (PD-C18)."""
+        id_cita = self.insertar_cita_pasada()
+        estado, _, cuerpo = self.peticion_post(
+            f"/citas/{id_cita}/cancelar", {"codigo": self.codigo}
+        )
+        self.assertEqual(estado, 409)
+        self.assertIn("cuya hora ya ha pasado", cuerpo)
+
     def test_ruta7_reprogramar_ofrece_huecos_del_mismo_especialista(self):
         """Ruta 7 · GET /citas/<id>/reprogramar: no permite cambiar de especialista (RN-C10)."""
         fecha = fecha_futura()
@@ -185,6 +195,26 @@ class PruebasWebCitas(ServidorCitasTestCase):
         self.assertEqual(listada.id_cita, cita.id_cita)
         self.assertEqual(listada.hora_inicio, "11:00")
 
+    def test_ruta7_reprogramar_cita_pasada_responde_409(self):
+        """CL-C10: para una cita ya pasada no se ofrece ningún hueco destino."""
+        id_cita = self.insertar_cita_pasada()
+        estado, _, cuerpo = self.peticion_get(
+            f"/citas/{id_cita}/reprogramar?codigo={self.codigo}"
+        )
+        self.assertEqual(estado, 409)
+        self.assertIn("cuya hora ya ha pasado", cuerpo)
+        self.assertNotIn("Trasladar a", cuerpo)
+
+    def test_ruta8_reprogramar_cita_pasada_responde_409(self):
+        """CL-C10: el traslado de una cita ya pasada se rechaza con el motivo concreto."""
+        id_cita = self.insertar_cita_pasada()
+        estado, _, cuerpo = self.peticion_post(
+            f"/citas/{id_cita}/reprogramar",
+            {"codigo": self.codigo, "fecha": fecha_futura(), "hora_inicio": "11:00"},
+        )
+        self.assertEqual(estado, 409)
+        self.assertIn("cuya hora ya ha pasado", cuerpo)
+
     def test_ruta9_agenda_lista_especialistas(self):
         """Ruta 9 · GET /agenda: especialistas con su horario y duración (RF-C08, RF-C09)."""
         estado, _, cuerpo = self.peticion_get("/agenda")
@@ -220,6 +250,25 @@ class PruebasWebCitas(ServidorCitasTestCase):
         self.assertEqual(estado, 200)
         self.assertIn("Citas canceladas por el centro: 1", cuerpo)
         self.assertIn(servicio.MOTIVO_FRANJA, cuerpo)
+        # PD-C22, CE-C10: fecha, hora y motivo de cada cita, sin ningún dato del paciente.
+        self.assertIn(fecha, cuerpo)
+        self.assertIn("09:00", cuerpo)
+        self.assertNotIn(self.codigo, cuerpo)
+
+    def test_ruta10_franja_pasada_responde_400(self):
+        """CL-C12, PD-C23: una franja entera en el pasado se rechaza con el motivo concreto."""
+        estado, _, cuerpo = self.peticion_post(
+            "/agenda/bloquear",
+            {
+                "id_especialista": self.especialista.id_especialista,
+                "fecha_inicio": fecha_pasada(),
+                "fecha_fin": fecha_pasada(),
+                "hora_inicio": "09:00",
+                "hora_fin": "11:00",
+            },
+        )
+        self.assertEqual(estado, 400)
+        self.assertIn("cuya fecha y hora de fin ya han pasado", cuerpo)
 
     def test_ruta10_bloquear_sin_citas_lo_indica(self):
         """CL-C04: la franja se aplica sin cancelar nada."""
@@ -272,6 +321,32 @@ class PruebasWebCitas(ServidorCitasTestCase):
         )
         self.assertEqual(estado, 400)
         self.assertIn("La duración debe ser un número entero de minutos.", cuerpo)
+
+    def test_ruta11_duracion_sin_hueco_responde_400(self):
+        """CL-C11, PD-C21: una duración con la que no cabe ningún hueco no cambia nada."""
+        estado, _, cuerpo = self.peticion_post(
+            "/agenda/duracion",
+            {"id_especialista": self.especialista.id_especialista, "duracion_minutos": "300"},
+        )
+        self.assertEqual(estado, 400)
+        self.assertIn("no cabe ningún hueco", cuerpo)
+        especialista = servicio.obtener_especialista(
+            self.ruta_bd, self.especialista.id_especialista
+        )
+        self.assertEqual(especialista.duracion_minutos, 20)
+
+    def test_ruta11_la_confirmacion_no_muestra_datos_del_paciente(self):
+        """PD-C22, CE-C10: fecha, hora y motivo de cada cita cancelada, sin datos del paciente."""
+        self.reservar(fecha=fecha_futura(), hora="09:20")
+        estado, _, cuerpo = self.peticion_post(
+            "/agenda/duracion",
+            {"id_especialista": self.especialista.id_especialista, "duracion_minutos": "30"},
+        )
+        self.assertEqual(estado, 200)
+        self.assertIn("Citas canceladas por el centro: 1", cuerpo)
+        self.assertIn("09:20", cuerpo)
+        self.assertIn(servicio.MOTIVO_DURACION, cuerpo)
+        self.assertNotIn(self.codigo, cuerpo)
 
     def test_cac13_no_existe_pantalla_para_gestionar_centros_ni_especialistas(self):
         """CA-C13: no hay ninguna vía para crear o editar centros, especialidades ni

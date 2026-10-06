@@ -13,6 +13,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest import mock
 from urllib.parse import urlencode
 
 from programacion_citas import servicio, web
@@ -139,10 +140,18 @@ class BaseCitasTestCase(unittest.TestCase):
 
 
 class ServidorCitasTestCase(BaseCitasTestCase):
-    """Servidor real en un puerto libre con el manejador combinado (D-C13)."""
+    """Servidor real en un puerto libre con el manejador combinado (D-C13).
+
+    El momento actual se fija en `MOMENTO_FIJO` (D-C10, D-C15): la interfaz web lo pide a
+    `servicio.momento_actual`, y sin fijarlo las pruebas web dependerían de la fecha real y
+    dejarían de pasar cuando `fecha_futura()` quedara en el pasado.
+    """
 
     def setUp(self):
         super().setUp()
+        parche = mock.patch.object(servicio, "momento_actual", return_value=MOMENTO_FIJO)
+        parche.start()
+        self.addCleanup(parche.stop)
         self.servidor = web.crear_servidor(self.ruta_bd, puerto=0)
         self.puerto = self.servidor.server_address[1]
         self.hilo = threading.Thread(target=self.servidor.serve_forever, daemon=True)

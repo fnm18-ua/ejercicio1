@@ -1,6 +1,7 @@
 """Pruebas del ajuste de la duración de las consultas (US6).
 
-Verifican RF-C09, RN-C12, CA-C12, CL-C05 y las precisiones PD-C10, PD-C11 y PD-C20.
+Verifican RF-C09, RN-C12, CA-C12, CL-C05, CL-C11 y las precisiones PD-C10, PD-C11, PD-C20 y
+PD-C21 (la duración debe permitir al menos un hueco, aclaración Q2 del 2026-10-06).
 """
 
 import unittest
@@ -128,6 +129,36 @@ class PruebasDuracion(BaseCitasTestCase):
         self.assertEqual(especialista.hora_fin, self.especialista.hora_fin)
         self.assertEqual(especialista.dias_semana, self.especialista.dias_semana)
         self.assertEqual(especialista.duracion_minutos, 30)
+
+    def test_clc11_duracion_sin_hueco_posible_se_rechaza_sin_cambiar_nada(self):
+        """CL-C11, PD-C21: con 9:00-13:00, 300 minutos no dejan ningún hueco; se rechaza sin
+        cambiar la duración ni cancelar citas."""
+        cita = self.reservar(hora="09:00")
+        with self.assertRaises(servicio.ErrorValidacion) as contexto:
+            self.ajustar(300)
+        self.assertEqual(
+            contexto.exception.mensaje,
+            "Con esa duración no cabe ningún hueco en el horario del especialista.",
+        )
+        especialista = servicio.obtener_especialista(
+            self.ruta_bd, self.especialista.id_especialista
+        )
+        self.assertEqual(especialista.duracion_minutos, 20)
+        self.assertEqual(self.estado_de(cita.id_cita), servicio.ESTADO_RESERVADA)
+
+    def test_pdc21_duracion_un_minuto_mayor_que_el_horario_se_rechaza(self):
+        """PD-C21: el límite es la amplitud del horario; 241 minutos ya no caben en 9:00-13:00."""
+        with self.assertRaises(servicio.ErrorValidacion) as contexto:
+            self.ajustar(241)
+        self.assertEqual(
+            contexto.exception.mensaje,
+            "Con esa duración no cabe ningún hueco en el horario del especialista.",
+        )
+
+    def test_pdc21_duracion_igual_al_horario_se_acepta(self):
+        """PD-C21: 240 minutos caben justos en 9:00-13:00 y dejan un único hueco."""
+        self.ajustar(240)
+        self.assertEqual(self.horas_libres(), ["09:00"])
 
 
 if __name__ == "__main__":

@@ -228,55 +228,121 @@ Los dos hallazgos restantes son de trazabilidad en comentarios del código:
   nivel de módulo.
 
 ## 7. Verificación de las correcciones
-Escenarios ejecutados sobre la aplicación en contenedor, con datos ficticios.
 
-> Nota: el contenedor opera en UTC, dos horas por detrás de la hora local. Las
-> reglas temporales se evalúan con la hora del contenedor; las horas indicadas
-> en estos escenarios son las del contenedor.
+Escenarios ejecutados a mano sobre la aplicación en contenedor, con datos
+ficticios. Las capturas están en `memoria/evidencias/`.
 
-### E1 · Reservar para un paciente existente y comprobar su identidad
-**Entrada:** _(código de historia clínica usado)_
-**Pasos:** _(…)_
-**Esperado:** la cita queda asociada a ese código; identificarse por documento
-devuelve las mismas citas (CA-C04).
-**Observado:**
-**Evidencia:**
+> **Hora del contenedor.** El contenedor opera en UTC, dos horas por detrás de
+> la hora local. Las reglas temporales se evalúan con la hora del contenedor,
+> comprobada con `docker compose exec registro-pacientes date`. Las horas de
+> estos escenarios son las del contenedor.
 
-### E2 · Cancelar y consultar la disponibilidad
-**Esperado:** la cita pasa a «cancelada por el paciente» y su hueco vuelve a
-ofrecerse (CA-C06).
+### Incidencia previa: verificación contra una imagen desactualizada
 
-### E3 · Reprogramar con éxito
-**Esperado:** misma cita y mismo especialista, hueco anterior libre y nuevo
-ocupado (CA-C09).
+La primera ronda de verificación se ejecutó tras un `docker compose up` sin
+`--build`, que reutiliza la imagen existente en lugar de reconstruirla. Esa
+imagen era anterior a `/speckit-implement`, de modo que lo que se estaba
+probando era el código sin corregir.
 
-### E4 · Reprogramar ante un fallo
-**Esperado:** se rechaza con su motivo y la cita original conserva fecha y hora.
+Se detectó porque el escenario E6 **no falló cuando debía**: una cita de las
+09:40 se canceló con éxito a las 09:45, que es exactamente el defecto F1 ya
+corregido en el código. Tras `docker compose down` y `docker compose up
+--build`, el mismo escenario se comportó según la especificación.
 
-### E5 · Bloquear una franja con citas existentes
-**Esperado:** las citas futuras de dentro pasan a «cancelada por el centro» con
-su motivo; la confirmación muestra número, fecha, hora y motivo, y **ningún
-código de historia clínica** (PD-C22).
+Las evidencias obtenidas antes de la reconstrucción se descartaron. La
+incidencia se documenta porque ilustra el tema de la práctica: comprobar un
+comportamiento no dice nada si no se sabe qué versión se está ejecutando.
 
-### E6 · Cita ya pasada (decisión Q1)
-**Esperado:** se rechaza con «la cita ya ha pasado», no con el mensaje de las 24
-horas (CL-C10).
+### Escenarios
 
-### E7 · Duración sin huecos posibles (decisión Q2)
-**Esperado:** 300 minutos con horario de 9:00 a 13:00 se rechaza, la duración
-sigue en 20 y ninguna cita cambia de estado (CL-C11). 240 sí se acepta.
+Entorno común: paciente **HC-000002**; especialistas precargados **Ana Ruiz
+Delgado** (Dermatología, Centro Norte, 09:00–13:00, consultas de 20 minutos) y
+**Nuria Calvo Esteban** (Oftalmología, Centro Sur, 09:00–12:30, consultas de 50
+minutos).
 
-### E8 · Franja ya pasada (decisión Q4)
-**Esperado:** bloquear ayer se rechaza; bloquear hoy con el tramo ya terminado
-se rechaza; bloquear hoy de 9:00 a 14:00 antes de las 14:00 se acepta (CL-C12).
+#### E1 · Reservar para un paciente existente y comprobar su identidad
+**Entrada:** HC-000002; Dermatología + Centro Norte; 12/10/2026 a las 09:00.
+**Pasos:** identificarse por código, buscar especialista, reservar el hueco.
+Repetir la identificación por tipo y número de documento.
+**Esperado:** la cita queda asociada al paciente y ambas vías de identificación
+devuelven el mismo listado (CA-C04).
+**Observado:** correcto. Las dos vías devuelven un listado idéntico; las
+capturas muestran la URL de acceso, distinta en cada caso.
+**Evidencia:** `E1-01-cita-por-codigo.png`, `E1-02-cita-por-documento.png`
 
-### E9 · Regresión del módulo de pacientes
-**Pasos:** registrar un paciente, buscarlo por documento y por código,
+#### E2 · Cancelar y consultar la disponibilidad
+**Entrada:** cita del 12/10/2026 a las 10:00.
+**Esperado:** pasa a «Cancelada por el paciente» con su motivo y su hueco
+vuelve a ofrecerse (CA-C06).
+**Observado:** correcto.
+**Evidencia:** `E2-01-cita-cancelada.png`, `E2-02-hueco-liberado.png`
+
+#### E3 · Reprogramar con éxito
+**Entrada:** cita del 12/10/2026 a las 09:00, trasladada a las 11:00.
+**Esperado:** misma cita y mismo especialista; el hueco anterior queda libre y
+el nuevo ocupado (CA-C09).
+**Observado:** correcto.
+**Evidencia:** `E3-01-cita-reprogramada.png`, `E3-02-huecos-tras-reprogramar.png`
+
+#### E4 · Reprogramar ante un fallo
+**Entrada:** cita del 12/10/2026 a las 12:00, trasladada al hueco de las 11:00,
+ya ocupado.
+**Esperado:** se rechaza indicando el motivo y la cita original conserva su
+fecha y su hora.
+**Observado:** correcto.
+**Evidencia:** `E4-01-reprogramacion-rechazada.png`, `E4-02-cita-intacta.png`
+
+#### E5 · Bloquear una franja con citas existentes
+**Entrada:** Ana Ruiz Delgado, del 12/10/2026 al 12/10/2026, de 11:00 a 11:40,
+con citas reservadas a las 11:00 y a las 12:00.
+**Esperado:** la de las 11:00 pasa a «Cancelada por el centro» con su motivo y
+la de las 12:00 sigue reservada. La confirmación muestra número, fecha, hora y
+motivo, y **ningún código de historia clínica** (PD-C22, CE-C10).
+**Observado:** correcto. La confirmación no contiene datos del paciente.
+**Evidencia:** `E5-01-confirmacion-sin-datos-paciente.png`,
+`E5-02-cita-cancelada-por-centro.png`
+
+#### E6 · Cita ya pasada (decisión Q1)
+**Entrada:** cita reservada el 08/10/2026 a las 11:49 para las 10:00 del mismo
+día; intento de cancelación pasadas las 10:00.
+**Esperado:** se rechaza indicando que la cita ya ha pasado, no con el mensaje
+del plazo de 24 horas (CL-C10).
+**Observado:** correcto, tras reconstruir la imagen. Es el escenario que
+destapó la incidencia descrita arriba.
+**Evidencia:** `E6-01-cita-reservada-hoy.png`, `E6-02-rechazo-cita-pasada.png`
+
+#### E7 · Duración sin huecos posibles (decisión Q2)
+**Entrada:** Nuria Calvo Esteban, jornada de 09:00 a 12:30 (210 minutos).
+**Esperado:** 300 minutos se rechaza sin cambiar la duración ni cancelar citas;
+210 se acepta (CL-C11, PD-C21).
+**Observado:** correcto. El límite no es un valor fijo: depende de la jornada
+de cada especialista.
+**Evidencia:** `E7-01-duracion-300-rechazada.png`,
+`E7-02-duracion-sin-cambios.png`, `E7-03-duracion-210-aceptada.png`
+
+#### E8 · Franja ya pasada (decisión Q4)
+**Entrada:** Ana Ruiz Delgado; bloqueo del 07/10/2026, de 09:00 a 11:00.
+**Esperado:** se rechaza por tener la fecha y la hora de fin ya pasadas
+(CL-C12).
+**Observado:** correcto.
+**Evidencia:** `E8-01-franja-ayer.png`
+**Nota:** los otros dos casos de CL-C12 —bloqueo de hoy con el tramo ya
+terminado, que se rechaza, y bloqueo de hoy aún sin terminar, que se acepta— no
+se verificaron a mano; están cubiertos por las pruebas automáticas de T047.
+
+#### E9 · Regresión del módulo de pacientes
+**Pasos:** registrar un paciente, buscarlo por documento, buscarlo por código y
 modificar su teléfono.
-**Esperado:** las tres operaciones funcionan igual que antes.
+**Esperado:** las tres operaciones del módulo de registro funcionan igual que
+antes de la actualización.
+**Observado:** correcto.
+**Evidencia:** `E9-01-registro.png`, `E9-02-busqueda.png`,
+`E9-03-modificacion.png`
 
 ### Pruebas automáticas
-192 pruebas, todas en verde. Línea base antes de la actualización: 167.
+
+192 pruebas, todas en verde. Línea base antes de la actualización: 167. Salida
+completa en `evidencias/pruebas-192.txt`.
 
 ## 8. Comparación del estado inicial y final
 

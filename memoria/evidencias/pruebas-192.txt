@@ -1,0 +1,468 @@
+test_dc11_dias_semana_se_interpreta_como_numeros_iso (tests.test_agenda.PruebasDiasDeConsulta.test_dc11_dias_semana_se_interpreta_como_numeros_iso)
+D-C11: `1,2,3,4,5` son lunes a viernes en convenio ISO. ... ok
+test_pdc10_encaje_en_rejilla_de_30_minutos (tests.test_agenda.PruebasEncaje.test_pdc10_encaje_en_rejilla_de_30_minutos)
+CA-C12: la cita de las 9:00 encaja en la rejilla nueva y la de las 9:20 no. ... ok
+test_pdc10_una_cita_que_no_cabe_entera_no_encaja (tests.test_agenda.PruebasEncaje.test_pdc10_una_cita_que_no_cabe_entera_no_encaja)
+PD-C10: «cabe entera en el horario» excluye la que rebasaría la hora de fin. ... ok
+test_pdc12_hueco_que_acaba_al_fin_de_la_franja_queda_bloqueado (tests.test_agenda.PruebasFranja.test_pdc12_hueco_que_acaba_al_fin_de_la_franja_queda_bloqueado)
+CA-C10: con franja 9:00-11:00 y 20 minutos se bloquean 9:00, 10:00 y 10:40. ... ok
+test_pdc12_hueco_que_empieza_al_fin_de_la_franja_queda_libre (tests.test_agenda.PruebasFranja.test_pdc12_hueco_que_empieza_al_fin_de_la_franja_queda_libre)
+CA-C10: las citas de las 11:00 en adelante siguen reservadas. ... ok
+test_cac01_rejilla_de_20_minutos_tiene_12_huecos (tests.test_agenda.PruebasRejilla.test_cac01_rejilla_de_20_minutos_tiene_12_huecos)
+CA-C01: 9:00-13:00 con 20 minutos ofrece 12 huecos, de 9:00 a 12:40. ... ok
+test_cac12_rejilla_de_30_minutos_tiene_8_huecos (tests.test_agenda.PruebasRejilla.test_cac12_rejilla_de_30_minutos_tiene_8_huecos)
+CA-C12: la rejilla nueva de 30 minutos contiene 9:00 y no contiene 9:20. ... ok
+test_clc05_rejilla_de_50_minutos_tiene_4_huecos_sin_tramo_parcial (tests.test_agenda.PruebasRejilla.test_clc05_rejilla_de_50_minutos_tiene_4_huecos_sin_tramo_parcial)
+CL-C05: 9:00-13:00 con 50 minutos genera 4 huecos; el resto no forma hueco parcial. ... ok
+test_clc06_dia_sin_consulta_no_tiene_huecos (tests.test_agenda.PruebasRejilla.test_clc06_dia_sin_consulta_no_tiene_huecos)
+CL-C06: en una fecha en la que no pasa consulta no se ofrece ningún hueco. ... ok
+test_horas_siempre_con_dos_digitos (tests.test_agenda.PruebasRejilla.test_horas_siempre_con_dos_digitos)
+Las horas se formatean `HH:MM` para que el orden lexicográfico sea el cronológico. ... ok
+test_pdc06_citas_consecutivas_no_se_solapan (tests.test_agenda.PruebasSolapamiento.test_pdc06_citas_consecutivas_no_se_solapan)
+PD-C06: una cita que acaba a las 9:20 y otra que empieza a las 9:20 no se solapan. ... ok
+test_pdc06_citas_que_se_pisan_si_se_solapan (tests.test_agenda.PruebasSolapamiento.test_pdc06_citas_que_se_pisan_si_se_solapan)
+PD-C06: con 30 minutos, la de las 9:00 alcanza a la de las 9:20. ... ok
+test_pdc06_la_misma_hora_se_solapa (tests.test_agenda.PruebasSolapamiento.test_pdc06_la_misma_hora_se_solapa)
+CA-C05: dos citas a la misma hora se solapan aunque sean de especialistas distintos. ... ok
+test_cac10_bloqueo_de_9_a_11_cancela_las_de_dentro_y_conserva_las_de_las_11 (tests.test_bloqueo.PruebasBloqueo.test_cac10_bloqueo_de_9_a_11_cancela_las_de_dentro_y_conserva_las_de_las_11)
+CA-C10: se cancelan 9:00, 10:00 y 10:40 (que acaba justo a las 11:00) y sobrevive 11:00. ... ok
+test_cac11_la_cita_cancelada_se_ve_con_su_motivo_en_el_listado (tests.test_bloqueo.PruebasBloqueo.test_cac11_la_cita_cancelada_se_ve_con_su_motivo_en_el_listado)
+CA-C11: el paciente ve su cita cancelada por el centro con el motivo (RN-C13). ... ok
+test_clc04_bloqueo_sin_citas_dentro_no_cancela_nada (tests.test_bloqueo.PruebasBloqueo.test_clc04_bloqueo_sin_citas_dentro_no_cancela_nada)
+CL-C04: la franja se aplica sin cancelar ninguna cita. ... ok
+test_clc12_franja_con_fecha_de_fin_anterior_a_hoy_se_rechaza (tests.test_bloqueo.PruebasBloqueo.test_clc12_franja_con_fecha_de_fin_anterior_a_hoy_se_rechaza)
+CL-C12, PD-C23 caso c: una franja entera en el pasado se rechaza y no se registra. ... ok
+test_clc12_franja_de_hoy_con_el_tramo_ya_terminado_se_rechaza (tests.test_bloqueo.PruebasBloqueo.test_clc12_franja_de_hoy_con_el_tramo_ya_terminado_se_rechaza)
+CL-C12, PD-C23 caso c: cuenta la fecha y la hora de fin, no solo la fecha. ... ok
+test_clc12_una_franja_rechazada_no_cancela_ninguna_cita (tests.test_bloqueo.PruebasBloqueo.test_clc12_una_franja_rechazada_no_cancela_ninguna_cita)
+CL-C12: el rechazo no registra la franja ni cancela ninguna cita. ... ok
+test_pdc11_el_bloqueo_no_altera_una_cita_pasada (tests.test_bloqueo.PruebasBloqueo.test_pdc11_el_bloqueo_no_altera_una_cita_pasada)
+PD-C11 (aclaración Q3): las citas pasadas son historial, no agenda. ... ok
+test_pdc12_bloqueo_de_varios_dias_cancela_las_citas_de_todo_el_rango (tests.test_bloqueo.PruebasBloqueo.test_pdc12_bloqueo_de_varios_dias_cancela_las_citas_de_todo_el_rango)
+PD-C12 (aclaración Q1): unas vacaciones se bloquean con un solo bloqueo. ... ok
+test_pdc12_el_bloqueo_no_alcanza_fechas_fuera_del_rango (tests.test_bloqueo.PruebasBloqueo.test_pdc12_el_bloqueo_no_alcanza_fechas_fuera_del_rango)
+PD-C12: el rango es cerrado; una cita del día siguiente no se cancela. ... ok
+test_pdc23_franja_de_hoy_cuya_hora_de_fin_no_ha_llegado_se_acepta (tests.test_bloqueo.PruebasBloqueo.test_pdc23_franja_de_hoy_cuya_hora_de_fin_no_ha_llegado_se_acepta)
+PD-C23: un bloqueo de hoy de 9:00 a 14:00 pedido a las 11:00 se acepta. ... ok
+test_pdc23_franja_de_hoy_que_acaba_justo_ahora_se_rechaza (tests.test_bloqueo.PruebasBloqueo.test_pdc23_franja_de_hoy_que_acaba_justo_ahora_se_rechaza)
+PD-C23: se rechaza cuando el fin no es posterior al momento actual, también si ... ok
+test_pdc23_franja_fuera_del_horario_se_acepta (tests.test_bloqueo.PruebasBloqueo.test_pdc23_franja_fuera_del_horario_se_acepta)
+PD-C23: una franja sin efecto no se rechaza; solo las mal formadas o ya pasadas. ... ok
+test_rfc08_horas_invertidas_se_rechazan (tests.test_bloqueo.PruebasBloqueo.test_rfc08_horas_invertidas_se_rechazan)
+PD-C18: la hora de fin debe ser posterior a la de inicio (CL-C12, PD-C23 caso b). ... ok
+test_rfc08_rango_de_fechas_invertido_se_rechaza (tests.test_bloqueo.PruebasBloqueo.test_rfc08_rango_de_fechas_invertido_se_rechaza)
+PD-C18: la fecha de fin no puede ser anterior a la de inicio (CL-C12, PD-C23 caso a). ... ok
+test_rnc04_los_huecos_bloqueados_dejan_de_ofrecerse (tests.test_bloqueo.PruebasBloqueo.test_rnc04_los_huecos_bloqueados_dejan_de_ofrecerse)
+RN-C04: un hueco dentro de una franja bloqueada no está libre. ... ok
+test_rnc04_no_se_puede_reservar_en_una_franja_bloqueada (tests.test_bloqueo.PruebasBloqueo.test_rnc04_no_se_puede_reservar_en_una_franja_bloqueada)
+RN-C04: la reserva de un hueco bloqueado se rechaza. ... ok
+test_rnc11_el_bloqueo_no_respeta_el_plazo_de_24_horas (tests.test_bloqueo.PruebasBloqueo.test_rnc11_el_bloqueo_no_respeta_el_plazo_de_24_horas)
+RN-C11: la cancelación por el centro no está sujeta a la regla de las 24 horas. ... ok
+test_ca06_buscar_codigo_hc000042_devuelve_ese_paciente (tests.test_busqueda.PruebasBusqueda.test_ca06_buscar_codigo_hc000042_devuelve_ese_paciente)
+CA-06, RF-04, RF-05: buscar HC-000042 devuelve ese paciente con todos sus datos. ... ok
+test_ca07_documento_en_minusculas_encuentra_paciente (tests.test_busqueda.PruebasBusqueda.test_ca07_documento_en_minusculas_encuentra_paciente)
+CA-07: buscar «12345678z» encuentra al paciente registrado con «12345678Z». ... ok
+test_cl01_sin_coincidencias_devuelve_none (tests.test_busqueda.PruebasBusqueda.test_cl01_sin_coincidencias_devuelve_none)
+CL-01: una búsqueda sin coincidencias no produce error. ... ok
+test_cl02_documento_con_espacios_extremos_se_localiza (tests.test_busqueda.PruebasBusqueda.test_cl02_documento_con_espacios_extremos_se_localiza)
+CL-02: un documento con espacios sobrantes al principio y al final se localiza. ... ok
+test_pd06_codigo_en_minusculas_se_localiza (tests.test_busqueda.PruebasBusqueda.test_pd06_codigo_en_minusculas_se_localiza)
+PD-06: el código se normaliza al buscar. ... ok
+test_pd06_fragmento_de_codigo_no_se_localiza (tests.test_busqueda.PruebasBusqueda.test_pd06_fragmento_de_codigo_no_se_localiza)
+PD-06, RN-08: la comparación es del código completo, nunca de fragmentos. ... ok
+test_pd08_documento_con_otro_tipo_no_se_localiza (tests.test_busqueda.PruebasBusqueda.test_pd08_documento_con_otro_tipo_no_se_localiza)
+PD-08: la búsqueda por documento exige tipo y número. ... ok
+test_pd10_espacio_interior_no_equivale_a_sin_espacio (tests.test_busqueda.PruebasBusqueda.test_pd10_espacio_interior_no_equivale_a_sin_espacio)
+PD-10: un espacio interior simple se conserva y «1234 5678Z» no es «12345678Z». ... ok
+test_pd10_espacios_interiores_repetidos_se_reducen (tests.test_busqueda.PruebasBusqueda.test_pd10_espacios_interiores_repetidos_se_reducen)
+PD-10: los espacios interiores repetidos se reducen a uno al comparar. ... ok
+test_cac06_cancelacion_con_mas_de_24_horas_libera_el_hueco (tests.test_cancelacion.PruebasCancelacion.test_cac06_cancelacion_con_mas_de_24_horas_libera_el_hueco)
+CA-C06: queda «cancelada por el paciente» y su hueco vuelve a estar libre. ... ok
+test_cac07_cancelacion_con_menos_de_24_horas_se_rechaza (tests.test_cancelacion.PruebasCancelacion.test_cac07_cancelacion_con_menos_de_24_horas_se_rechaza)
+CA-C07: una cita reservada hace más de 24 horas ya no se puede cancelar. ... ok
+test_cac08_cita_reservada_hoy_para_dentro_de_3_horas_se_puede_cancelar (tests.test_cancelacion.PruebasCancelacion.test_cac08_cita_reservada_hoy_para_dentro_de_3_horas_se_puede_cancelar)
+CA-C08: si se reservó con menos de 24 horas de antelación, se puede cancelar. ... ok
+test_clc07_cancelar_una_cita_ya_cancelada_se_rechaza (tests.test_cancelacion.PruebasCancelacion.test_clc07_cancelar_una_cita_ya_cancelada_se_rechaza)
+CL-C07: una cita cancelada no se puede volver a cancelar. ... ok
+test_clc10_cancelar_una_cita_pasada_reservada_con_antelacion_indica_que_ha_pasado (tests.test_cancelacion.PruebasCancelacion.test_clc10_cancelar_una_cita_pasada_reservada_con_antelacion_indica_que_ha_pasado)
+CL-C10, PD-C18: el motivo del rechazo es que la cita ya ha pasado, no el plazo. ... ok
+test_clc10_cancelar_una_cita_pasada_reservada_con_menos_de_24_horas_se_rechaza (tests.test_cancelacion.PruebasCancelacion.test_clc10_cancelar_una_cita_pasada_reservada_con_menos_de_24_horas_se_rechaza)
+CL-C10, PD-C07: la excepción de las reservas con menos de 24 horas no alcanza a una ... ok
+test_pdc04_el_hueco_liberado_puede_reservarlo_otro_paciente (tests.test_cancelacion.PruebasCancelacion.test_pdc04_el_hueco_liberado_puede_reservarlo_otro_paciente)
+PD-C04: las citas canceladas no ocupan hueco. ... ok
+test_pdc07_cancelar_justo_a_la_hora_de_inicio_se_rechaza (tests.test_cancelacion.PruebasCancelacion.test_pdc07_cancelar_justo_a_la_hora_de_inicio_se_rechaza)
+PD-C07: una cita está pasada cuando su inicio no es posterior al momento actual. ... ok
+test_pdc07_cancelar_un_minuto_antes_del_inicio_se_permite (tests.test_cancelacion.PruebasCancelacion.test_pdc07_cancelar_un_minuto_antes_del_inicio_se_permite)
+PD-C07, RN-C09: reservada con menos de 24 horas, se puede cancelar hasta su inicio. ... ok
+test_rfc06_cancelar_una_cita_de_otro_paciente_se_rechaza (tests.test_cancelacion.PruebasCancelacion.test_rfc06_cancelar_una_cita_de_otro_paciente_se_rechaza)
+RF-C06: el paciente solo opera con sus propias citas. ... ok
+test_rfc06_cancelar_una_cita_inexistente_se_rechaza (tests.test_cancelacion.PruebasCancelacion.test_rfc06_cancelar_una_cita_inexistente_se_rechaza)
+RF-C06: un identificador que no existe se rechaza con el motivo concreto. ... ok
+test_rnc09_justo_24_horas_antes_se_permite (tests.test_cancelacion.PruebasCancelacion.test_rnc09_justo_24_horas_antes_se_permite)
+RN-C09: el límite es «hasta 24 horas antes», incluido el instante exacto. ... ok
+test_ca08_duplicado_no_crea_registro_y_devuelve_existente (tests.test_duplicados.PruebasDuplicados.test_ca08_duplicado_no_crea_registro_y_devuelve_existente)
+CA-08: un documento existente no crea registro y devuelve el paciente existente. ... ok
+test_pd03_duplicado_no_consume_codigo (tests.test_duplicados.PruebasDuplicados.test_pd03_duplicado_no_consume_codigo)
+PD-03: un intento de duplicado no consume código. ... ok
+test_pd09_duplicado_con_documento_normalizado (tests.test_duplicados.PruebasDuplicados.test_pd09_duplicado_con_documento_normalizado)
+PD-09: el duplicado se detecta comparando el documento normalizado. ... ok
+test_rn07_mismo_numero_distinto_tipo_se_permite (tests.test_duplicados.PruebasDuplicados.test_rn07_mismo_numero_distinto_tipo_se_permite)
+RN-07: la unicidad es por tipo y número; otro tipo con el mismo número se admite. ... ok
+test_cac12_al_pasar_de_20_a_30_minutos_la_de_las_9_sigue_y_la_de_las_9_20_se_cancela (tests.test_duracion.PruebasDuracion.test_cac12_al_pasar_de_20_a_30_minutos_la_de_las_9_sigue_y_la_de_las_9_20_se_cancela)
+CA-C12: encaja la de las 9:00 y no la de las 9:20. ... ok
+test_cac12_la_rejilla_de_30_minutos_tiene_8_huecos (tests.test_duracion.PruebasDuracion.test_cac12_la_rejilla_de_30_minutos_tiene_8_huecos)
+RN-C12: los huecos se recalculan sobre la duración nueva. ... ok
+test_clc05_al_pasar_a_50_minutos_la_rejilla_tiene_4_huecos (tests.test_duracion.PruebasDuracion.test_clc05_al_pasar_a_50_minutos_la_rejilla_tiene_4_huecos)
+CL-C05: 9:00-13:00 con 50 minutos genera 4 huecos, sin tramo parcial. ... ok
+test_clc11_duracion_sin_hueco_posible_se_rechaza_sin_cambiar_nada (tests.test_duracion.PruebasDuracion.test_clc11_duracion_sin_hueco_posible_se_rechaza_sin_cambiar_nada)
+CL-C11, PD-C21: con 9:00-13:00, 300 minutos no dejan ningún hueco; se rechaza sin ... ok
+test_pdc10_la_duracion_de_una_cita_es_la_vigente_del_especialista (tests.test_duracion.PruebasDuracion.test_pdc10_la_duracion_de_una_cita_es_la_vigente_del_especialista)
+PD-C10: la duración no se congela al reservar. ... ok
+test_pdc11_el_cambio_de_duracion_no_altera_una_cita_pasada (tests.test_duracion.PruebasDuracion.test_pdc11_el_cambio_de_duracion_no_altera_una_cita_pasada)
+PD-C11 (aclaración Q3): una consulta ya celebrada no se cancela. ... ok
+test_pdc20_el_recalculo_no_comprueba_el_solapamiento_del_paciente (tests.test_duracion.PruebasDuracion.test_pdc20_el_recalculo_no_comprueba_el_solapamiento_del_paciente)
+PD-C20: limitación conocida y declarada, no un defecto silencioso. ... ok
+test_pdc21_duracion_igual_al_horario_se_acepta (tests.test_duracion.PruebasDuracion.test_pdc21_duracion_igual_al_horario_se_acepta)
+PD-C21: 240 minutos caben justos en 9:00-13:00 y dejan un único hueco. ... ok
+test_pdc21_duracion_un_minuto_mayor_que_el_horario_se_rechaza (tests.test_duracion.PruebasDuracion.test_pdc21_duracion_un_minuto_mayor_que_el_horario_se_rechaza)
+PD-C21: el límite es la amplitud del horario; 241 minutos ya no caben en 9:00-13:00. ... ok
+test_rfc09_duracion_no_numerica_se_rechaza (tests.test_duracion.PruebasDuracion.test_rfc09_duracion_no_numerica_se_rechaza)
+PD-C18: una duración no numérica se rechaza con el motivo concreto. ... ok
+test_rfc09_duracion_no_positiva_se_rechaza (tests.test_duracion.PruebasDuracion.test_rfc09_duracion_no_positiva_se_rechaza)
+PD-C18: la duración debe ser un entero positivo. ... ok
+test_rfc09_el_horario_no_cambia_al_ajustar_la_duracion (tests.test_duracion.PruebasDuracion.test_rfc09_el_horario_no_cambia_al_ajustar_la_duracion)
+PD-C19: solo la duración es ajustable; el horario es dato precargado. ... ok
+test_ca09_corregir_documento_mantiene_codigo (tests.test_modificacion.PruebasCorreccionDocumento.test_ca09_corregir_documento_mantiene_codigo)
+CA-09: corregir el número de documento lo guarda y el código sigue siendo el mismo. ... ok
+test_ca10_documento_de_otro_paciente_no_se_guarda (tests.test_modificacion.PruebasCorreccionDocumento.test_ca10_documento_de_otro_paciente_no_se_guarda)
+CA-10, RN-11: poner el documento de otro paciente no se guarda. ... ok
+test_pd02_mantener_su_propio_documento_no_es_duplicado (tests.test_modificacion.PruebasCorreccionDocumento.test_pd02_mantener_su_propio_documento_no_es_duplicado)
+PD-02: el propio paciente no cuenta como duplicado de sí mismo. ... ok
+test_pd09_documento_de_otro_paciente_normalizado_se_detecta (tests.test_modificacion.PruebasCorreccionDocumento.test_pd09_documento_de_otro_paciente_normalizado_se_detecta)
+PD-09: la unicidad al modificar compara el documento normalizado. ... ok
+test_pd12_documento_corregido_se_guarda_normalizado (tests.test_modificacion.PruebasCorreccionDocumento.test_pd12_documento_corregido_se_guarda_normalizado)
+PD-12: el documento corregido se guarda normalizado. ... ok
+test_ca11_telefono_modificado_aparece_al_buscar (tests.test_modificacion.PruebasModificacion.test_ca11_telefono_modificado_aparece_al_buscar)
+CA-11: tras modificar el teléfono, al buscar aparece el teléfono nuevo. ... ok
+test_ca12_modificar_no_cambia_codigo_ni_fecha_registro (tests.test_modificacion.PruebasModificacion.test_ca12_modificar_no_cambia_codigo_ni_fecha_registro)
+CA-12, RN-06: la modificación nunca cambia el código ni la fecha de registro. ... ok
+test_cl05_cambiar_a_sin_cobertura_elimina_poliza (tests.test_modificacion.PruebasModificacion.test_cl05_cambiar_a_sin_cobertura_elimina_poliza)
+CL-05, RN-02: al pasar a «sin cobertura» el número de póliza deja de estar presente. ... ok
+test_pd01_modificacion_valida_igual_que_registro (tests.test_modificacion.PruebasModificacion.test_pd01_modificacion_valida_igual_que_registro)
+PD-01: la modificación aplica las mismas reglas que el registro. ... ok
+test_rf06_modificar_paciente_inexistente (tests.test_modificacion.PruebasModificacion.test_rf06_modificar_paciente_inexistente)
+RF-06: modificar un código que no existe informa de que no existe. ... ok
+test_rf06_rellenar_datos_opcionales_vacios (tests.test_modificacion.PruebasModificacion.test_rf06_rellenar_datos_opcionales_vacios)
+RF-06: se pueden rellenar los datos que quedaron vacíos en el registro. ... ok
+test_rn03_cambiar_a_mutua_exige_poliza (tests.test_modificacion.PruebasModificacion.test_rn03_cambiar_a_mutua_exige_poliza)
+RN-03, PD-01: pasar a mutua sin número de póliza no se guarda. ... ok
+test_ca01_primer_codigo_es_hc000001_y_siguiente_hc000002 (tests.test_registro.PruebasRegistro.test_ca01_primer_codigo_es_hc000001_y_siguiente_hc000002)
+CA-01, RN-04, RN-05: el primer paciente recibe HC-000001 y el siguiente HC-000002. ... ok
+test_ca02_sin_telefono_email_ni_domicilio_se_guarda (tests.test_registro.PruebasRegistro.test_ca02_sin_telefono_email_ni_domicilio_se_guarda)
+CA-02: un paciente sin datos opcionales se guarda y tiene código. ... ok
+test_ca03_falta_dato_obligatorio_no_se_guarda (tests.test_registro.PruebasRegistro.test_ca03_falta_dato_obligatorio_no_se_guarda)
+CA-03, RN-01: sin un dato obligatorio no se guarda y se indica cuál falta. ... ok
+test_ca03_varios_errores_se_indican_juntos (tests.test_registro.PruebasRegistro.test_ca03_varios_errores_se_indican_juntos)
+CA-03, D-08: se indican todos los datos que faltan a la vez. ... ok
+test_ca04_sin_cobertura_no_tiene_poliza (tests.test_registro.PruebasRegistro.test_ca04_sin_cobertura_no_tiene_poliza)
+CA-04, RN-02: con «sin cobertura» se guarda sin mutua ni número de póliza. ... ok
+test_ca05_mutua_sin_poliza_no_se_guarda (tests.test_registro.PruebasRegistro.test_ca05_mutua_sin_poliza_no_se_guarda)
+CA-05, RN-03: con mutua y sin póliza no se guarda e indica que falta la póliza. ... ok
+test_ca12_codigo_en_datos_se_ignora_al_registrar (tests.test_registro.PruebasRegistro.test_ca12_codigo_en_datos_se_ignora_al_registrar)
+CA-12, RN-06: el código no puede fijarse desde los datos de entrada. ... ok
+test_cl03_fecha_nacimiento_futura_se_rechaza (tests.test_registro.PruebasRegistro.test_cl03_fecha_nacimiento_futura_se_rechaza)
+CL-03, RN-09: una fecha de nacimiento futura se rechaza indicando el motivo. ... ok
+test_cl04_codigos_agotados (tests.test_registro.PruebasRegistro.test_cl04_codigos_agotados)
+CL-04: agotado HC-999999 no se repite ningún código y se avisa. ... ok
+test_d08_fecha_no_valida_se_rechaza (tests.test_registro.PruebasRegistro.test_d08_fecha_no_valida_se_rechaza)
+D-08: una fecha que no existe se rechaza. ... ok
+test_pd03_registro_rechazado_no_consume_codigo (tests.test_registro.PruebasRegistro.test_pd03_registro_rechazado_no_consume_codigo)
+PD-03: los registros rechazados no consumen código. ... ok
+test_pd04_registros_simultaneos_reciben_codigos_distintos (tests.test_registro.PruebasRegistro.test_pd04_registros_simultaneos_reciben_codigos_distintos)
+PD-04: registros simultáneos reciben códigos únicos y consecutivos. ... ok
+test_pd11_secuencia_continua_tras_reabrir (tests.test_registro.PruebasRegistro.test_pd11_secuencia_continua_tras_reabrir)
+PD-11: tras reiniciar, los datos se conservan y la secuencia continúa. ... ok
+test_pd13_dato_obligatorio_solo_espacios_es_falta (tests.test_registro.PruebasRegistro.test_pd13_dato_obligatorio_solo_espacios_es_falta)
+PD-13: un dato obligatorio con solo espacios se trata como ausente. ... ok
+test_rn03_mutua_sin_nombre_no_se_guarda (tests.test_registro.PruebasRegistro.test_rn03_mutua_sin_nombre_no_se_guarda)
+RN-03: con cobertura de mutua es obligatorio indicar la mutua. ... ok
+test_rn09_fecha_nacimiento_hoy_se_acepta (tests.test_registro.PruebasRegistro.test_rn09_fecha_nacimiento_hoy_se_acepta)
+RN-09: la fecha actual no es posterior a la fecha actual y se acepta. ... ok
+test_rn10_guarda_fecha_de_registro_de_hoy (tests.test_registro.PruebasRegistro.test_rn10_guarda_fecha_de_registro_de_hoy)
+RN-10: se guarda la fecha de registro del paciente. ... ok
+test_cac07_reprogramar_fuera_de_plazo_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_cac07_reprogramar_fuera_de_plazo_se_rechaza)
+CA-C07: el plazo de las 24 horas también rige la reprogramación. ... ok
+test_cac09_reprogramar_conserva_id_y_especialista_y_libera_el_hueco (tests.test_reprogramacion.PruebasReprogramacion.test_cac09_reprogramar_conserva_id_y_especialista_y_libera_el_hueco)
+CA-C09: mismo identificador y especialista; el hueco anterior queda libre. ... ok
+test_cac09_reprogramar_no_crea_una_cita_nueva (tests.test_reprogramacion.PruebasReprogramacion.test_cac09_reprogramar_no_crea_una_cita_nueva)
+CE-C05: reprogramar es un traslado, nunca borrar e insertar. ... ok
+test_clc03_reprogramar_a_un_hueco_ocupado_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_clc03_reprogramar_a_un_hueco_ocupado_se_rechaza)
+CL-C03: el hueco destino debe estar libre. ... ok
+test_clc08_reprogramar_una_cita_ya_cancelada_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_clc08_reprogramar_una_cita_ya_cancelada_se_rechaza)
+CL-C08: una cita cancelada no vuelve al estado reservada. ... ok
+test_clc10_el_rechazo_por_cita_pasada_precede_al_de_plazo (tests.test_reprogramacion.PruebasReprogramacion.test_clc10_el_rechazo_por_cita_pasada_precede_al_de_plazo)
+CL-C10, PD-C18: el motivo es que la cita ya ha pasado, no el plazo de 24 horas. ... ok
+test_clc10_reprogramar_una_cita_pasada_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_clc10_reprogramar_una_cita_pasada_se_rechaza)
+CL-C10, PD-C07: una cita cuya hora ya ha pasado no se traslada, aunque se reservara ... ok
+test_clc13_reprogramar_a_un_hueco_que_empieza_justo_ahora_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_clc13_reprogramar_a_un_hueco_que_empieza_justo_ahora_se_rechaza)
+CL-C13, PD-C05, PD-C08: el hueco destino debe empezar después del momento actual. ... ok
+test_pdc07_reprogramar_actualiza_el_momento_de_reserva (tests.test_reprogramacion.PruebasReprogramacion.test_pdc07_reprogramar_actualiza_el_momento_de_reserva)
+PD-C07 (aclaración Q2): tras reprogramar, la referencia de las 24 horas es el ... ok
+test_pdc07_sin_actualizar_el_momento_la_cita_quedaria_atrapada (tests.test_reprogramacion.PruebasReprogramacion.test_pdc07_sin_actualizar_el_momento_la_cita_quedaria_atrapada)
+PD-C07: contraste explícito de la decisión Q2. ... ok
+test_pdc08_la_propia_cita_no_cuenta_como_solapamiento_consigo_misma (tests.test_reprogramacion.PruebasReprogramacion.test_pdc08_la_propia_cita_no_cuenta_como_solapamiento_consigo_misma)
+PD-C08: al comprobar RN-C07 se excluye la cita que se traslada. ... ok
+test_rfc07_reprogramar_una_cita_de_otro_paciente_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_rfc07_reprogramar_una_cita_de_otro_paciente_se_rechaza)
+RF-C07: el paciente solo traslada sus propias citas. ... ok
+test_rnc07_reprogramar_a_un_hueco_solapado_con_otra_cita_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_rnc07_reprogramar_a_un_hueco_solapado_con_otra_cita_se_rechaza)
+RN-C07: el traslado no puede pisar otra cita reservada del mismo paciente. ... ok
+test_rnc08_reprogramar_a_un_hueco_pasado_se_rechaza (tests.test_reprogramacion.PruebasReprogramacion.test_rnc08_reprogramar_a_un_hueco_pasado_se_rechaza)
+RN-C08: el hueco destino no puede estar en el pasado. ... ok
+test_rnc10_no_se_puede_cambiar_de_especialista (tests.test_reprogramacion.PruebasReprogramacion.test_rnc10_no_se_puede_cambiar_de_especialista)
+RN-C10: reprogramar conserva el especialista; solo cambian fecha y hora. ... ok
+test_pdc10_la_cita_se_lista_con_la_duracion_vigente (tests.test_reserva.PruebasListado.test_pdc10_la_cita_se_lista_con_la_duracion_vigente)
+PD-C10: la duración de una cita es la vigente de su especialista. ... ok
+test_pdc14_cita_pasada_sigue_reservada (tests.test_reserva.PruebasListado.test_pdc14_cita_pasada_sigue_reservada)
+PD-C14: no existe estado «atendida»; una cita pasada permanece reservada. ... ok
+test_pdc14_el_listado_incluye_pasadas_y_futuras (tests.test_reserva.PruebasListado.test_pdc14_el_listado_incluye_pasadas_y_futuras)
+PD-C14: el listado no filtra por fecha. ... ok
+test_pdc14_paciente_sin_citas_devuelve_lista_vacia (tests.test_reserva.PruebasListado.test_pdc14_paciente_sin_citas_devuelve_lista_vacia)
+PD-C14: un paciente sin citas recibe una lista vacía, no un error. ... ok
+test_rfc05_listado_muestra_estado_de_cada_cita (tests.test_reserva.PruebasListado.test_rfc05_listado_muestra_estado_de_cada_cita)
+RF-C05: el listado muestra cada cita con su estado. ... ok
+test_rnc13_cita_cancelada_incluye_su_motivo (tests.test_reserva.PruebasListado.test_rnc13_cita_cancelada_incluye_su_motivo)
+RN-C13: toda cancelación registra su motivo y queda visible para el paciente. ... ok
+test_cac01_huecos_de_la_rejilla_completa (tests.test_reserva.PruebasReserva.test_cac01_huecos_de_la_rejilla_completa)
+CA-C01: el especialista de 9:00 a 13:00 con 20 minutos ofrece 12 huecos. ... ok
+test_cac02_hueco_reservado_desaparece_de_los_libres (tests.test_reserva.PruebasReserva.test_cac02_hueco_reservado_desaparece_de_los_libres)
+CA-C02: tras reservar las 9:00 ese hueco no se ofrece y los demás siguen. ... ok
+test_cac03_busqueda_exige_especialidad_y_centro (tests.test_reserva.PruebasReserva.test_cac03_busqueda_exige_especialidad_y_centro)
+CA-C03: solo se devuelven los especialistas que cumplen los dos filtros. ... ok
+test_cac04_identificacion_por_documento_equivale_a_codigo (tests.test_reserva.PruebasReserva.test_cac04_identificacion_por_documento_equivale_a_codigo)
+CA-C04: las dos vías de identificación llevan al mismo paciente (PD-C01). ... ok
+test_cac05_reserva_solapada_se_rechaza (tests.test_reserva.PruebasReserva.test_cac05_reserva_solapada_se_rechaza)
+CA-C05: el paciente no puede tener dos citas solapadas, aunque sean de ... ok
+test_clc01_sin_huecos_libres_devuelve_lista_vacia (tests.test_reserva.PruebasReserva.test_clc01_sin_huecos_libres_devuelve_lista_vacia)
+CL-C01: con todos los huecos ocupados se informa de que no hay disponibilidad. ... ok
+test_clc02_busqueda_sin_resultados_devuelve_lista_vacia (tests.test_reserva.PruebasReserva.test_clc02_busqueda_sin_resultados_devuelve_lista_vacia)
+CL-C02: una combinación sin especialistas se informa, sin error. ... ok
+test_clc03_el_indice_unico_parcial_impide_el_hueco_duplicado (tests.test_reserva.PruebasReserva.test_clc03_el_indice_unico_parcial_impide_el_hueco_duplicado)
+D-C08: la garantía está en la base de datos, no solo en la comprobación previa. ... ok
+test_clc03_segunda_reserva_del_mismo_hueco_se_rechaza (tests.test_reserva.PruebasReserva.test_clc03_segunda_reserva_del_mismo_hueco_se_rechaza)
+CL-C03: si otra persona acaba de ocupar el hueco, la segunda reserva se rechaza. ... ok
+test_clc06_fecha_sin_consulta_no_ofrece_huecos (tests.test_reserva.PruebasReserva.test_clc06_fecha_sin_consulta_no_ofrece_huecos)
+CL-C06: en un sábado el especialista no pasa consulta. ... ok
+test_clc09_identificacion_de_paciente_inexistente_lanza_error (tests.test_reserva.PruebasReserva.test_clc09_identificacion_de_paciente_inexistente_lanza_error)
+CL-C09: un código inventado se rechaza sin crear ningún paciente. ... ok
+test_clc13_hueco_que_empieza_justo_ahora_no_se_ofrece (tests.test_reserva.PruebasReserva.test_clc13_hueco_que_empieza_justo_ahora_no_se_ofrece)
+CL-C13, PD-C05: un hueco solo es reservable si su inicio es estrictamente posterior ... ok
+test_clc13_reservar_un_hueco_que_empieza_justo_ahora_se_rechaza (tests.test_reserva.PruebasReserva.test_clc13_reservar_un_hueco_que_empieza_justo_ahora_se_rechaza)
+CL-C13, PD-C05: ninguna cita nace ya pasada y sin poder cancelarse. ... ok
+test_pdc01_identificacion_por_documento_se_compara_normalizada (tests.test_reserva.PruebasReserva.test_pdc01_identificacion_por_documento_se_compara_normalizada)
+PD-C01: la comparación reutiliza la normalización del módulo de registro. ... ok
+test_pdc05_hueco_que_empieza_un_minuto_despues_se_reserva_y_se_puede_cancelar (tests.test_reserva.PruebasReserva.test_pdc05_hueco_que_empieza_un_minuto_despues_se_reserva_y_se_puede_cancelar)
+PD-C05, PD-C07: toda cita recién reservada es futura y se puede cancelar. ... ok
+test_pdc06_reserva_consecutiva_se_acepta (tests.test_reserva.PruebasReserva.test_pdc06_reserva_consecutiva_se_acepta)
+PD-C06: dos citas que se tocan en el extremo no se solapan. ... ok
+test_rfc02_busqueda_sin_los_dos_filtros_se_rechaza (tests.test_reserva.PruebasReserva.test_rfc02_busqueda_sin_los_dos_filtros_se_rechaza)
+PD-C15: la búsqueda exige especialidad y centro. ... ok
+test_rfc04_hueco_fuera_de_la_rejilla_se_rechaza (tests.test_reserva.PruebasReserva.test_rfc04_hueco_fuera_de_la_rejilla_se_rechaza)
+RN-C03: solo se puede reservar en una hora que sea inicio de un hueco. ... ok
+test_rnc08_hueco_pasado_se_rechaza (tests.test_reserva.PruebasReserva.test_rnc08_hueco_pasado_se_rechaza)
+RN-C08: no se puede reservar un hueco cuya hora ya ha pasado (PD-C05). ... ok
+test_rnc08_se_puede_reservar_para_el_mismo_dia (tests.test_reserva.PruebasReserva.test_rnc08_se_puede_reservar_para_el_mismo_dia)
+RN-C08: no hay antelación mínima; se puede reservar para hoy. ... ok
+test_buscar_sin_parametros_pide_criterio (tests.test_web.PruebasWebBusqueda.test_buscar_sin_parametros_pide_criterio)
+RF-03, RF-04: una búsqueda vacía pide un código o un documento. ... 127.0.0.1 - - [08/Oct/2026 12:24:52] "GET /buscar HTTP/1.1" 200 -
+ok
+test_ca07_buscar_por_documento_en_web (tests.test_web.PruebasWebBusqueda.test_ca07_buscar_por_documento_en_web)
+CA-07, RF-03: la búsqueda por documento normalizado muestra la ficha. ... 127.0.0.1 - - [08/Oct/2026 12:24:53] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:53] "GET /buscar?tipo_documento=DNI&numero_documento=00000000t HTTP/1.1" 200 -
+ok
+test_ca13_inicio_solo_busca_por_codigo_o_documento (tests.test_web.PruebasWebBusqueda.test_ca13_inicio_solo_busca_por_codigo_o_documento)
+CA-13: la búsqueda solo acepta código o documento; no hay búsqueda por nombre. ... 127.0.0.1 - - [08/Oct/2026 12:24:53] "GET / HTTP/1.1" 200 -
+ok
+test_cl01_sin_coincidencias_responde_200_con_mensaje (tests.test_web.PruebasWebBusqueda.test_cl01_sin_coincidencias_responde_200_con_mensaje)
+CL-01: sin coincidencias se informa de que no existe el paciente, sin error. ... 127.0.0.1 - - [08/Oct/2026 12:24:54] "GET /buscar?codigo=HC-000999 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 12:24:54] "GET /buscar?tipo_documento=DNI&numero_documento=99999999R HTTP/1.1" 200 -
+ok
+test_pd05_ficha_completa (tests.test_web.PruebasWebBusqueda.test_pd05_ficha_completa)
+PD-05, RF-05, RN-10: la ficha muestra todos los datos y la fecha de registro. ... 127.0.0.1 - - [08/Oct/2026 12:24:54] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:54] "GET /buscar?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_ca10_documento_de_otro_paciente_responde_409 (tests.test_web.PruebasWebCorreccionDocumento.test_ca10_documento_de_otro_paciente_responde_409)
+CA-10: poner el documento de otro paciente responde 409 e informa del motivo. ... 127.0.0.1 - - [08/Oct/2026 12:24:55] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:55] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:55] "POST /pacientes/HC-000002/editar HTTP/1.1" 409 -
+ok
+test_ca08_registro_duplicado_responde_409_con_paciente_existente (tests.test_web.PruebasWebDuplicados.test_ca08_registro_duplicado_responde_409_con_paciente_existente)
+CA-08: el duplicado responde 409, informa del motivo y muestra el paciente existente. ... 127.0.0.1 - - [08/Oct/2026 12:24:55] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:55] "POST /pacientes HTTP/1.1" 409 -
+ok
+test_ca11_modificacion_redirige_a_ficha (tests.test_web.PruebasWebModificacion.test_ca11_modificacion_redirige_a_ficha)
+CA-11: tras modificar el teléfono, la ficha muestra el teléfono nuevo. ... 127.0.0.1 - - [08/Oct/2026 12:24:56] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:56] "POST /pacientes/HC-000001/editar HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:56] "GET /buscar?codigo=HC-000001&aviso=modificado HTTP/1.1" 200 -
+ok
+test_ca12_codigo_enviado_en_formulario_se_ignora (tests.test_web.PruebasWebModificacion.test_ca12_codigo_enviado_en_formulario_se_ignora)
+CA-12, RN-06: un código enviado en el formulario no cambia el código del paciente. ... 127.0.0.1 - - [08/Oct/2026 12:24:56] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:56] "POST /pacientes/HC-000001/editar HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:57] "GET /buscar?codigo=HC-000500 HTTP/1.1" 200 -
+ok
+test_ca12_formulario_edicion_no_permite_editar_codigo (tests.test_web.PruebasWebModificacion.test_ca12_formulario_edicion_no_permite_editar_codigo)
+CA-12: el código se muestra como texto y no hay campo para editarlo. ... 127.0.0.1 - - [08/Oct/2026 12:24:57] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:57] "GET /pacientes/HC-000001/editar HTTP/1.1" 200 -
+ok
+test_pd01_modificacion_invalida_responde_400 (tests.test_web.PruebasWebModificacion.test_pd01_modificacion_invalida_responde_400)
+PD-01: una modificación inválida responde 400 con el error. ... 127.0.0.1 - - [08/Oct/2026 12:24:58] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:58] "POST /pacientes/HC-000001/editar HTTP/1.1" 400 -
+ok
+test_rf06_editar_paciente_inexistente_responde_404 (tests.test_web.PruebasWebModificacion.test_rf06_editar_paciente_inexistente_responde_404)
+RF-06: editar un código que no existe responde 404 con el mensaje. ... 127.0.0.1 - - [08/Oct/2026 12:24:58] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:58] "GET /pacientes/HC-000999/editar HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 12:24:58] "POST /pacientes/HC-000999/editar HTTP/1.1" 404 -
+ok
+test_rf06_ficha_enlaza_modificacion (tests.test_web.PruebasWebModificacion.test_rf06_ficha_enlaza_modificacion)
+RF-06: la ficha enlaza con el formulario de modificación. ... 127.0.0.1 - - [08/Oct/2026 12:24:59] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:24:59] "GET /buscar?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_ca03_registro_invalido_muestra_errores_y_conserva_valores (tests.test_web.PruebasWebRegistro.test_ca03_registro_invalido_muestra_errores_y_conserva_valores)
+CA-03: un registro sin nombre responde 400 con el error y conserva lo introducido. ... 127.0.0.1 - - [08/Oct/2026 12:24:59] "POST /pacientes HTTP/1.1" 400 -
+ok
+test_cl04_codigos_agotados_responde_409 (tests.test_web.PruebasWebRegistro.test_cl04_codigos_agotados_responde_409)
+CL-04: con los códigos agotados el registro responde 409 con el aviso. ... 127.0.0.1 - - [08/Oct/2026 12:25:00] "POST /pacientes HTTP/1.1" 409 -
+ok
+test_d10_datos_se_escapan_en_html (tests.test_web.PruebasWebRegistro.test_d10_datos_se_escapan_en_html)
+D-10: los datos mostrados se escapan en el HTML. ... 127.0.0.1 - - [08/Oct/2026 12:25:00] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:25:00] "GET /buscar?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_inicio_enlaza_registro (tests.test_web.PruebasWebRegistro.test_inicio_enlaza_registro)
+RF-01: la página de inicio enlaza con el formulario de registro. ... 127.0.0.1 - - [08/Oct/2026 12:25:01] "GET / HTTP/1.1" 200 -
+ok
+test_rf01_formulario_registro_tiene_todos_los_campos (tests.test_web.PruebasWebRegistro.test_rf01_formulario_registro_tiene_todos_los_campos)
+RF-01, RN-01: el formulario de registro contiene todos los campos de entrada. ... 127.0.0.1 - - [08/Oct/2026 12:25:01] "GET /pacientes/nuevo HTTP/1.1" 200 -
+ok
+test_rf02_registro_redirige_a_ficha_con_codigo (tests.test_web.PruebasWebRegistro.test_rf02_registro_redirige_a_ficha_con_codigo)
+RF-02, E-01: tras registrar se muestra la ficha con el código asignado. ... 127.0.0.1 - - [08/Oct/2026 12:25:02] "POST /pacientes HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:25:02] "GET /buscar?codigo=HC-000001&aviso=registrado HTTP/1.1" 200 -
+ok
+test_ruta_desconocida_responde_404 (tests.test_web.PruebasWebRegistro.test_ruta_desconocida_responde_404)
+Contrato web: cualquier ruta fuera de las 6 definidas responde 404. ... 127.0.0.1 - - [08/Oct/2026 12:25:02] "GET /pacientes HTTP/1.1" 404 -
+ok
+test_cac13_no_existe_pantalla_para_gestionar_centros_ni_especialistas (tests.test_web_citas.PruebasWebCitas.test_cac13_no_existe_pantalla_para_gestionar_centros_ni_especialistas)
+CA-C13: no hay ninguna vía para crear o editar centros, especialidades ni ... 127.0.0.1 - - [08/Oct/2026 12:25:03] "GET /agenda/especialistas/nuevo HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 12:25:03] "GET /agenda/especialistas HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 12:25:03] "GET /agenda/centros HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 12:25:03] "GET /agenda/especialidades HTTP/1.1" 404 -
+ok
+test_dc13_las_rutas_del_modulo_de_registro_siguen_funcionando (tests.test_web_citas.PruebasWebCitas.test_dc13_las_rutas_del_modulo_de_registro_siguen_funcionando)
+D-C13: el manejador combinado conserva las 6 rutas del módulo de registro. ... 127.0.0.1 - - [08/Oct/2026 12:25:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 12:25:03] "GET /pacientes/nuevo HTTP/1.1" 200 -
+127.0.0.1 - - [08/Oct/2026 12:25:04] "GET /buscar?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_dc16_los_datos_mostrados_se_escapan (tests.test_web_citas.PruebasWebCitas.test_dc16_los_datos_mostrados_se_escapan)
+D-C16: todo dato mostrado se escapa antes de insertarlo en el HTML. ... 127.0.0.1 - - [08/Oct/2026 12:25:04] "GET /citas/mias?codigo=HC-000002 HTTP/1.1" 200 -
+ok
+test_pdc02_el_flujo_de_agenda_no_pide_identificacion (tests.test_web_citas.PruebasWebCitas.test_pdc02_el_flujo_de_agenda_no_pide_identificacion)
+PD-C02: limitación declarada; `/agenda` está abierta sin credenciales. ... 127.0.0.1 - - [08/Oct/2026 12:25:05] "GET /agenda HTTP/1.1" 200 -
+ok
+test_pdc13_no_existe_ruta_para_desbloquear_una_franja (tests.test_web_citas.PruebasWebCitas.test_pdc13_no_existe_ruta_para_desbloquear_una_franja)
+PD-C13: solo se bloquea; no hay operación de desbloqueo. ... 127.0.0.1 - - [08/Oct/2026 12:25:05] "GET /agenda/desbloquear HTTP/1.1" 404 -
+127.0.0.1 - - [08/Oct/2026 12:25:05] "GET /agenda/franjas HTTP/1.1" 404 -
+ok
+test_ruta10_bloquear_confirma_las_canceladas (tests.test_web_citas.PruebasWebCitas.test_ruta10_bloquear_confirma_las_canceladas)
+Ruta 10 · POST /agenda/bloquear (RF-C08, CA-C10). ... 127.0.0.1 - - [08/Oct/2026 12:25:06] "POST /agenda/bloquear HTTP/1.1" 200 -
+ok
+test_ruta10_bloquear_sin_citas_lo_indica (tests.test_web_citas.PruebasWebCitas.test_ruta10_bloquear_sin_citas_lo_indica)
+CL-C04: la franja se aplica sin cancelar nada. ... 127.0.0.1 - - [08/Oct/2026 12:25:06] "POST /agenda/bloquear HTTP/1.1" 200 -
+ok
+test_ruta10_franja_pasada_responde_400 (tests.test_web_citas.PruebasWebCitas.test_ruta10_franja_pasada_responde_400)
+CL-C12, PD-C23: una franja entera en el pasado se rechaza con el motivo concreto. ... 127.0.0.1 - - [08/Oct/2026 12:25:07] "POST /agenda/bloquear HTTP/1.1" 400 -
+ok
+test_ruta10_rango_invertido_responde_400 (tests.test_web_citas.PruebasWebCitas.test_ruta10_rango_invertido_responde_400)
+PD-C18: la fecha de fin no puede ser anterior a la de inicio. ... 127.0.0.1 - - [08/Oct/2026 12:25:07] "POST /agenda/bloquear HTTP/1.1" 400 -
+ok
+test_ruta11_ajustar_duracion_confirma_y_muestra_la_rejilla (tests.test_web_citas.PruebasWebCitas.test_ruta11_ajustar_duracion_confirma_y_muestra_la_rejilla)
+Ruta 11 · POST /agenda/duracion (RF-C09, CA-C12). ... 127.0.0.1 - - [08/Oct/2026 12:25:08] "POST /agenda/duracion HTTP/1.1" 200 -
+ok
+test_ruta11_duracion_no_valida_responde_400 (tests.test_web_citas.PruebasWebCitas.test_ruta11_duracion_no_valida_responde_400)
+PD-C18: una duración no numérica se rechaza con el motivo concreto. ... 127.0.0.1 - - [08/Oct/2026 12:25:09] "POST /agenda/duracion HTTP/1.1" 400 -
+ok
+test_ruta11_duracion_sin_hueco_responde_400 (tests.test_web_citas.PruebasWebCitas.test_ruta11_duracion_sin_hueco_responde_400)
+CL-C11, PD-C21: una duración con la que no cabe ningún hueco no cambia nada. ... 127.0.0.1 - - [08/Oct/2026 12:25:09] "POST /agenda/duracion HTTP/1.1" 400 -
+ok
+test_ruta11_la_confirmacion_no_muestra_datos_del_paciente (tests.test_web_citas.PruebasWebCitas.test_ruta11_la_confirmacion_no_muestra_datos_del_paciente)
+PD-C22, CE-C10: fecha, hora y motivo de cada cita cancelada, sin datos del paciente. ... 127.0.0.1 - - [08/Oct/2026 12:25:10] "POST /agenda/duracion HTTP/1.1" 200 -
+ok
+test_ruta1_identificacion (tests.test_web_citas.PruebasWebCitas.test_ruta1_identificacion)
+Ruta 1 · GET /citas: formularios de identificación (RF-C01). ... 127.0.0.1 - - [08/Oct/2026 12:25:10] "GET /citas HTTP/1.1" 200 -
+ok
+test_ruta2_busqueda_con_desplegables (tests.test_web_citas.PruebasWebCitas.test_ruta2_busqueda_con_desplegables)
+Ruta 2 · GET /citas/buscar: desplegables de especialidad y centro (RF-C02). ... 127.0.0.1 - - [08/Oct/2026 12:25:11] "GET /citas/buscar?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_ruta2_busqueda_sin_resultados_informa (tests.test_web_citas.PruebasWebCitas.test_ruta2_busqueda_sin_resultados_informa)
+CL-C02: sin coincidencias se informa, sin error. ... 127.0.0.1 - - [08/Oct/2026 12:25:11] "GET /citas/buscar?codigo=HC-000001&especialidad=Traumatolog%C3%ADa&centro=Centro%20Sur HTTP/1.1" 200 -
+ok
+test_ruta2_paciente_no_identificado_responde_400 (tests.test_web_citas.PruebasWebCitas.test_ruta2_paciente_no_identificado_responde_400)
+CL-C09: un código inexistente se rechaza con el motivo concreto. ... 127.0.0.1 - - [08/Oct/2026 12:25:12] "GET /citas/buscar?codigo=HC-999998 HTTP/1.1" 400 -
+ok
+test_ruta3_fecha_mal_formada_responde_400 (tests.test_web_citas.PruebasWebCitas.test_ruta3_fecha_mal_formada_responde_400)
+PD-C18: una fecha inválida se rechaza indicando el motivo. ... 127.0.0.1 - - [08/Oct/2026 12:25:13] "GET /citas/huecos?codigo=HC-000001&id_especialista=1&fecha=treinta-de-febrero HTTP/1.1" 400 -
+ok
+test_ruta3_fecha_sin_consulta_informa (tests.test_web_citas.PruebasWebCitas.test_ruta3_fecha_sin_consulta_informa)
+CL-C06: en un sábado no se ofrece ningún hueco. ... 127.0.0.1 - - [08/Oct/2026 12:25:13] "GET /citas/huecos?codigo=HC-000001&id_especialista=1&fecha=2026-10-10 HTTP/1.1" 200 -
+ok
+test_ruta3_huecos_muestra_la_rejilla (tests.test_web_citas.PruebasWebCitas.test_ruta3_huecos_muestra_la_rejilla)
+Ruta 3 · GET /citas/huecos: un botón por hueco libre (RF-C03, CA-C01). ... 127.0.0.1 - - [08/Oct/2026 12:25:14] "GET /citas/huecos?codigo=HC-000001&id_especialista=1&fecha=2026-10-08 HTTP/1.1" 200 -
+ok
+test_ruta4_hueco_ocupado_responde_409 (tests.test_web_citas.PruebasWebCitas.test_ruta4_hueco_ocupado_responde_409)
+CL-C03: la segunda reserva del mismo hueco se rechaza con 409. ... 127.0.0.1 - - [08/Oct/2026 12:25:14] "POST /citas HTTP/1.1" 409 -
+ok
+test_ruta4_reservar_redirige_al_listado (tests.test_web_citas.PruebasWebCitas.test_ruta4_reservar_redirige_al_listado)
+Ruta 4 · POST /citas: reserva y redirige con 303 (RF-C04). ... 127.0.0.1 - - [08/Oct/2026 12:25:15] "POST /citas HTTP/1.1" 303 -
+ok
+test_ruta5_listado_muestra_estado_y_motivo (tests.test_web_citas.PruebasWebCitas.test_ruta5_listado_muestra_estado_y_motivo)
+CA-C11: el listado muestra el estado y, si está cancelada, el motivo (RN-C13). ... 127.0.0.1 - - [08/Oct/2026 12:25:15] "GET /citas/mias?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_ruta5_listado_sin_citas_informa (tests.test_web_citas.PruebasWebCitas.test_ruta5_listado_sin_citas_informa)
+PD-C14: un paciente sin citas recibe un aviso, no un error. ... 127.0.0.1 - - [08/Oct/2026 12:25:16] "GET /citas/mias?codigo=HC-000001 HTTP/1.1" 200 -
+ok
+test_ruta6_cancelar_cita_inexistente_responde_404 (tests.test_web_citas.PruebasWebCitas.test_ruta6_cancelar_cita_inexistente_responde_404)
+RF-C06: una cita que no existe o no es del paciente responde 404. ... 127.0.0.1 - - [08/Oct/2026 12:25:16] "POST /citas/9999/cancelar HTTP/1.1" 404 -
+ok
+test_ruta6_cancelar_cita_pasada_responde_409 (tests.test_web_citas.PruebasWebCitas.test_ruta6_cancelar_cita_pasada_responde_409)
+CL-C10: una cita cuya hora ya ha pasado no se cancela, y se dice por qué (PD-C18). ... 127.0.0.1 - - [08/Oct/2026 12:25:17] "POST /citas/1/cancelar HTTP/1.1" 409 -
+ok
+test_ruta6_cancelar_cita_ya_cancelada_responde_409 (tests.test_web_citas.PruebasWebCitas.test_ruta6_cancelar_cita_ya_cancelada_responde_409)
+CL-C07: una cita ya cancelada no se puede volver a cancelar. ... 127.0.0.1 - - [08/Oct/2026 12:25:18] "POST /citas/1/cancelar HTTP/1.1" 303 -
+127.0.0.1 - - [08/Oct/2026 12:25:18] "POST /citas/1/cancelar HTTP/1.1" 409 -
+ok
+test_ruta6_cancelar_redirige_al_listado (tests.test_web_citas.PruebasWebCitas.test_ruta6_cancelar_redirige_al_listado)
+Ruta 6 · POST /citas/<id>/cancelar (RF-C06, CA-C06). ... 127.0.0.1 - - [08/Oct/2026 12:25:18] "POST /citas/1/cancelar HTTP/1.1" 303 -
+ok
+test_ruta7_reprogramar_cita_cancelada_responde_409 (tests.test_web_citas.PruebasWebCitas.test_ruta7_reprogramar_cita_cancelada_responde_409)
+CL-C08: no se ofrecen huecos para una cita ya cancelada. ... 127.0.0.1 - - [08/Oct/2026 12:25:19] "GET /citas/1/reprogramar?codigo=HC-000001 HTTP/1.1" 409 -
+ok
+test_ruta7_reprogramar_cita_pasada_responde_409 (tests.test_web_citas.PruebasWebCitas.test_ruta7_reprogramar_cita_pasada_responde_409)
+CL-C10: para una cita ya pasada no se ofrece ningún hueco destino. ... 127.0.0.1 - - [08/Oct/2026 12:25:19] "GET /citas/1/reprogramar?codigo=HC-000001 HTTP/1.1" 409 -
+ok
+test_ruta7_reprogramar_ofrece_huecos_del_mismo_especialista (tests.test_web_citas.PruebasWebCitas.test_ruta7_reprogramar_ofrece_huecos_del_mismo_especialista)
+Ruta 7 · GET /citas/<id>/reprogramar: no permite cambiar de especialista (RN-C10). ... 127.0.0.1 - - [08/Oct/2026 12:25:20] "GET /citas/1/reprogramar?codigo=HC-000001&fecha=2026-10-08 HTTP/1.1" 200 -
+ok
+test_ruta8_reprogramar_cita_pasada_responde_409 (tests.test_web_citas.PruebasWebCitas.test_ruta8_reprogramar_cita_pasada_responde_409)
+CL-C10: el traslado de una cita ya pasada se rechaza con el motivo concreto. ... 127.0.0.1 - - [08/Oct/2026 12:25:20] "POST /citas/1/reprogramar HTTP/1.1" 409 -
+ok
+test_ruta8_reprogramar_redirige_y_conserva_el_identificador (tests.test_web_citas.PruebasWebCitas.test_ruta8_reprogramar_redirige_y_conserva_el_identificador)
+Ruta 8 · POST /citas/<id>/reprogramar (RF-C07, CA-C09). ... 127.0.0.1 - - [08/Oct/2026 12:25:21] "POST /citas/1/reprogramar HTTP/1.1" 303 -
+ok
+test_ruta9_agenda_de_un_especialista_muestra_sus_dos_operaciones (tests.test_web_citas.PruebasWebCitas.test_ruta9_agenda_de_un_especialista_muestra_sus_dos_operaciones)
+Ruta 9: bloquear franja y ajustar duración, y nada más (CA-C13). ... 127.0.0.1 - - [08/Oct/2026 12:25:22] "GET /agenda?id_especialista=1 HTTP/1.1" 200 -
+ok
+test_ruta9_agenda_lista_especialistas (tests.test_web_citas.PruebasWebCitas.test_ruta9_agenda_lista_especialistas)
+Ruta 9 · GET /agenda: especialistas con su horario y duración (RF-C08, RF-C09). ... 127.0.0.1 - - [08/Oct/2026 12:25:22] "GET /agenda HTTP/1.1" 200 -
+ok
+
+----------------------------------------------------------------------
+Ran 192 tests in 35.592s
+
+OK
